@@ -1,0 +1,81 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --bakery-light: 246 241 231;
+    --bakery-cream: 251 248 241;
+    --bakery-sand: 233 223 203;
+    --bakery-gold: 184 137 46;
+    --bakery-honey: 224 176 84;
+    --bakery-brown: 90 58 34;
+    --bakery-crust: 138 90 43;
+    --bakery-dark: 27 21 18;
+    --bakery-ember: 44 30 22;
+    --bakery-orange: 201 98 43;
+  }
+  html { scroll-behavior: smooth; }
+  body { overflow-x: hidden; font-feature-settings: 'ss01', 'cv11'; }
+  h1, h2, h3, .font-serif { font-variation-settings: 'opsz' 144, 'SOFT' 30; }
+  ::selection { background: #b8892e; color: #fbf8f1; }
+  ::-webkit-scrollbar { width: 9px; }
+  ::-webkit-scrollbar-track { background: #f6f1e7; }
+  ::-webkit-scrollbar-thumb { background: #b8892e; border-radius: 999px; }
+  a:focus-visible, button:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-visible {
+    outline: 2px solid #c9622b;
+    outline-offset: 3px;
+  }
+}
+
+@layer utilities {
+  .text-balance { text-wrap: balance; }
+  .text-pretty { text-wrap: pretty; }
+
+  /* Grain papier subtil : posé en overlay sur les grandes surfaces. */
+  .grain::after {
+    content: '';
+    position: absolute; inset: 0;
+    pointer-events: none;
+    opacity: 0.06;
+    mix-blend-mode: multiply;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+  .grain-light::after { opacity: 0.09; mix-blend-mode: soft-light; }
+
+  /* Ardoise : fond craie */
+  .chalkboard {
+    background:
+      radial-gradient(120% 80% at 30% 20%, rgba(255,255,255,0.06), transparent 60%),
+      radial-gradient(80% 60% at 80% 90%, rgba(255,255,255,0.04), transparent 60%),
+      #1f2a24;
+  }
+  .chalk { color: #f3efe3; text-shadow: 0 0 1px rgba(255,255,255,0.6); }
+  .chalk-underline {
+    background-image: linear-gradient(90deg, rgba(243,239,227,0.9), rgba(243,239,227,0.3));
+    background-repeat: no-repeat; background-size: 100% 2px; background-position: 0 100%;
+  }
+
+  /* Ligne d'écriture manuscrite (dessinée au scroll) */
+  .draw-path { stroke-dasharray: 1; stroke-dashoffset: 1; }
+
+  .mask-fade-x {
+    -webkit-mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent);
+            mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent);
+  }
+}
+
+html.lenis { height: auto; }
+html.lenis.lenis-smooth { scroll-behavior: auto !important; }
+
+/* Mode soirée : ambiance plus chaude une fois la boutique fermée. */
+html[data-ambiance='soir'] body { background-color: #efe6d6; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}
