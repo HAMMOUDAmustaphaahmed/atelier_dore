@@ -3,6 +3,7 @@
 // jusqu'à 30 jours — utilisé pour le rappel 24 h avant le retrait.
 
 import { Resend } from 'resend';
+import nodemailer from 'nodemailer';
 import { env, assertEnv } from './env.js';
 import { AFFICHER_PRIX } from '../../src/data/infos.js';
 import { formatPickup, formatTotal, isQuote, REMINDER_HOURS_BEFORE } from './orders.js';
@@ -21,11 +22,36 @@ async function refreshBoutique() {
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
 let resend;
+let smtp;
 function client() {
   assertEnv(['resendKey']);
   if (!resend) resend = new Resend(env.resendKey);
   return resend;
 }
+function gmail() {
+  assertEnv(['gmailUser', 'gmailAppPassword']);
+  if (!smtp) smtp = nodemailer.createTransport({ service: 'gmail', auth: { user: env.gmailUser, pass: env.gmailAppPassword } });
+  return smtp;
+}
+
+/**
+ * Envoi générique (utilisé aussi par le formulaire de contact).
+ * { to, subject, html, replyTo?, scheduledAt? } → id du message ou null.
+ * Gmail ne sait pas programmer un envoi : scheduledAt est ignoré (le cron s'en charge).
+ */
+export async function sendMail({ to, subject, html, replyTo, scheduledAt }) {
+  await refreshBoutique();
+  const from = env.emailFrom.replace("L'Atelier Doré", B().nom);
+  if (env.emailProvider === 'gmail') {
+    const info = await gmail().sendMail({ from, to: Array.isArray(to) ? to.join(', ') : to, subject, html, ...(replyTo ? { replyTo } : {}) });
+    return info?.messageId || null;
+  }
+  const { data, error } = await client().emails.send({ from, to: Array.isArray(to) ? to : [to], subject, html, ...(replyTo ? { replyTo } : {}), ...(scheduledAt ? { scheduledAt } : {}) });
+  if (error) { const err = new Error(error.message || 'Envoi email impossible'); err.code = 'EMAIL'; throw err; }
+  return data?.id || null;
+}
+
+export const canSchedule = () => env.emailProvider !== 'gmail';
 
 const layout = (title, body) => `
   <div style="font-family:Inter,Arial,sans-serif;color:#2c1e16;max-width:600px;margin:0 auto;padding:24px">
@@ -60,14 +86,7 @@ export function ticketHtml(order) {
 }
 
 async function send(payload) {
-  await refreshBoutique();
-  const { data, error } = await client().emails.send({ from: env.emailFrom.replace("L'Atelier Doré", B().nom), ...payload });
-  if (error) {
-    const err = new Error(error.message || 'Envoi email impossible');
-    err.code = 'EMAIL';
-    throw err;
-  }
-  return data?.id || null;
+  return sendMail(payload);
 }
 
 // 1. Email de confirmation au client (lien à cliquer sous 48 h).
@@ -161,7 +180,7 @@ export async function sendCustomEmail({ to, nom, sujet, message }) {
 }
 
 export async function cancelScheduledEmail(id) {
-  if (!id) return;
+  if (!id || !canSchedule()) return;
   try {
     await client().emails.cancel(id);
   } catch (e) {
@@ -179,6 +198,12 @@ export async function scheduleReminder(order, now = new Date()) {
   const pickup = new Date(order.pickup_at).getTime();
   const remindAt = pickup - REMINDER_HOURS_BEFORE * 3_600_000;
   if (pickup <= now.getTime()) return null;
+  // Gmail : pas de programmation → le cron quotidien envoie quand le retrait est dans les 36 h.
+  if (!canSchedule()) {
+    if (pickup - now.getTime() > 36 * 3_600_000) return null;
+    const emailId = await sendReminder(order);
+    return { emailId: emailId || 'gmail', scheduledAt: new Date().toISOString(), immediate: true };
+  }
   const maxAhead = now.getTime() + 29 * 24 * 3_600_000;
   if (remindAt > maxAhead) return null; // trop loin : le cron s'en chargera
   if (remindAt <= now.getTime() + 60_000) {

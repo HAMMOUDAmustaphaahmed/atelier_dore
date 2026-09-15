@@ -1,11 +1,11 @@
 // POST /api/contact — envoie le formulaire de contact à la boulangerie (Resend)
 // et un accusé de réception au client.
 
-import { Resend } from 'resend';
 import { env, assertEnv } from './_lib/env.js';
 import { json, error, readJson, getIp, hashIp } from './_lib/http.js';
 import { store } from './_lib/store.js';
 import { getSettings } from './_lib/settings.js';
+import { sendMail } from './_lib/emails.js';
 
 const SUBJECT_LABELS = {
   info: 'Information générale',
@@ -19,7 +19,7 @@ const isEmail = (s) => /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(s);
 
 export async function POST(request) {
   try {
-    assertEnv(['resendKey', 'bakeryEmail']);
+    assertEnv([env.emailProvider === 'gmail' ? 'gmailUser' : 'resendKey', 'bakeryEmail']);
 
     const body = await readJson(request);
     if (!body) return error(400, 'Requête invalide.');
@@ -69,25 +69,17 @@ export async function POST(request) {
     const BOUTIQUE = { nom: settings.nom, ...settings.boutique };
     await store().saveContact({ subject, nom, email, telephone: telephone || null, message, evenement }).catch((e) => console.error('saveContact', e.message));
 
-    const resend = new Resend(env.resendKey);
-    const { error: sendErr } = await resend.emails.send({
-      from: env.emailFrom,
-      to: [env.bakeryEmail],
-      replyTo: email,
-      subject: `[Site] ${SUBJECT_LABELS[subject]} — ${nom}`,
-      html,
-    });
-    if (sendErr) {
-      console.error('resend', sendErr);
-      return error(502, 'Impossible d\'envoyer le message pour le moment.');
+    try {
+      await sendMail({ to: env.bakeryEmail, replyTo: email, subject: `[Site] ${SUBJECT_LABELS[subject]} — ${nom}`, html });
+    } catch (e) {
+      console.error('email contact', e);
+      return error(502, "Impossible d'envoyer le message pour le moment.");
     }
 
     // Accusé de réception (non bloquant : si l'adresse expéditrice n'est pas
     // encore vérifiée chez Resend, seul l'email vers la boulangerie passe).
-    resend.emails
-      .send({
-        from: env.emailFrom,
-        to: [email],
+    sendMail({
+        to: email,
         subject: `Nous avons bien reçu votre demande — ${BOUTIQUE.nom}`,
         html: `
           <div style="font-family:Inter,Arial,sans-serif;color:#2c1e16;max-width:600px">

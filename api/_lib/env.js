@@ -19,8 +19,13 @@ export const env = {
 
   sessionSecret: process.env.SESSION_SECRET,
 
+  // Emails : 'gmail' (gratuit, mot de passe d'application) ou 'resend' (domaine vérifié).
+  // Auto : gmail si GMAIL_USER est défini, sinon resend.
+  emailProvider: (process.env.EMAIL_PROVIDER || (process.env.GMAIL_USER ? 'gmail' : 'resend')).toLowerCase(),
+  gmailUser: process.env.GMAIL_USER,
+  gmailAppPassword: (process.env.GMAIL_APP_PASSWORD || '').replace(/\s+/g, ''),
   resendKey: process.env.RESEND_API_KEY,
-  emailFrom: process.env.EMAIL_FROM || "L'Atelier Doré <onboarding@resend.dev>",
+  emailFrom: process.env.EMAIL_FROM || (process.env.GMAIL_USER ? `L'Atelier Doré <${process.env.GMAIL_USER}>` : "L'Atelier Doré <onboarding@resend.dev>"),
   bakeryEmail: process.env.BAKERY_EMAIL,
 
   // Garde-fous
