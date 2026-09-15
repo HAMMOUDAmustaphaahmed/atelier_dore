@@ -11,10 +11,9 @@ import Vitrine from '../components/home/Vitrine';
 import Journee from '../components/home/Journee';
 import Comptoir from '../components/home/Comptoir';
 import { GateauAnniversaire, GateauMariage, GateauFiancailles } from '../components/icons/ProductIcons';
-import { avis } from '../data/products';
 import { useBoutique } from '../hooks/useBoutique';
 import { openLea } from '../lib/lea';
-import { useSite } from '../site/SiteProvider';
+import { useSite, useText } from '../site/SiteProvider';
 
 function NextBatchWidget() {
   const { nextBatch, open, closesAt, opensAt } = useBoutique();
@@ -33,29 +32,32 @@ function NextBatchWidget() {
 }
 
 export default function Home() {
-  const { textes: t, images: img, nom } = useSite();
+  const { images: img, nom } = useSite();
+  const t = useText();
+  const avis = [1, 2, 3].map((i) => ({ name: t(`avis_${i}_nom`), text: t(`avis_${i}_texte`) })).filter((a) => a.text);
   return (
     <>
       <SEO
         title="Accueil"
-        description={`Boulangerie artisanale ${nom}. Pains au levain, pâtisseries créatives et viennoiseries pur beurre. Commandez avec Léa.`}
+        description={`${nom} — ${t('seo_accueil')}`}
         keywords="boulangerie, pâtisserie, artisan, pain bio, croissant, Paris, gâteaux, commande en ligne"
       />
 
       {/* Hero — la croûte se fend et révèle la mie au fil du scroll */}
       <BreadReveal
         image={img.hero}
-        kicker={t.hero_kicker}
-        title={<>{t.hero_titre} <em className="text-bakery-honey not-italic font-light italic">{t.hero_titre_accent}</em></>}
-        subtitle={t.hero_sous_titre}
+        kicker={t('hero_kicker')}
+        title={<>{t('hero_titre')} <em className="text-bakery-honey not-italic font-light italic">{t('hero_titre_accent')}</em></>}
+        subtitle={t('hero_sous_titre')}
+        scrollLabel={t('hero_scroll')}
         aside={<NextBatchWidget />}
       >
         <div className="flex gap-3 justify-center flex-wrap">
           <button onClick={() => openLea()} className="bg-bakery-honey hover:bg-bakery-light text-bakery-dark px-7 py-4 rounded-full text-base font-semibold transition-colors shadow-glow">
-            Commander avec Léa
+            {t('hero_bouton_1')}
           </button>
           <Link to="/menu" className="bg-white/10 hover:bg-white/20 backdrop-blur-sm text-bakery-light border border-white/30 px-7 py-4 rounded-full text-base font-medium transition-colors">
-            Découvrir la carte
+            {t('hero_bouton_2')}
           </Link>
         </div>
         <div className="md:hidden mt-8"><NextBatchWidget /></div>
@@ -68,11 +70,11 @@ export default function Home() {
         <div className="container mx-auto px-6 relative z-10">
           <div className="grid lg:grid-cols-12 gap-12 items-center">
             <Reveal className="lg:col-span-5 lg:col-start-2">
-              <span className="text-bakery-orange font-semibold tracking-[0.2em] uppercase text-xs">Fait à la main, avec le temps</span>
-              <h2 className="font-serif text-display-sm text-bakery-dark mt-3 mb-6 text-balance">{t.intro_titre}</h2>
-              <p className="text-lg text-bakery-brown/80 leading-relaxed text-pretty mb-8">{t.intro_texte}</p>
+              <span className="text-bakery-orange font-semibold tracking-[0.2em] uppercase text-xs">{t('intro_kicker')}</span>
+              <h2 className="font-serif text-display-sm text-bakery-dark mt-3 mb-6 text-balance">{t('intro_titre')}</h2>
+              <p className="text-lg text-bakery-brown/80 leading-relaxed text-pretty mb-8">{t('intro_texte')}</p>
               <Link to="/histoire" className="inline-flex items-center gap-2 text-bakery-dark font-semibold border-b-2 border-bakery-orange pb-0.5 hover:text-bakery-orange transition-colors">
-                Lire notre histoire <ArrowRight size={18} />
+                {t('intro_lien')} <ArrowRight size={18} />
               </Link>
             </Reveal>
             <Reveal delay={0.1} className="lg:col-span-5 w-full">
@@ -84,8 +86,8 @@ export default function Home() {
                   strength={50}
                 />
                 <div className="absolute -bottom-6 -left-6 bg-bakery-cream rounded-2xl shadow-warm-sm border border-bakery-sand px-5 py-4 rotate-[-3deg]">
-                  <p className="font-hand text-2xl text-bakery-dark leading-none">48 h</p>
-                  <p className="text-xs text-bakery-brown/70 mt-1">de fermentation pour la boule au levain</p>
+                  <p className="font-hand text-2xl text-bakery-dark leading-none">{t('intro_badge_chiffre')}</p>
+                  <p className="text-xs text-bakery-brown/70 mt-1">{t('intro_badge_texte')}</p>
                 </div>
               </div>
             </Reveal>
@@ -102,8 +104,8 @@ export default function Home() {
         <div className="container mx-auto px-6 relative z-10">
           <Reveal className="flex items-end justify-between gap-6 mb-12">
             <div>
-              <span className="text-bakery-orange font-semibold tracking-[0.2em] uppercase text-xs">Nos signatures</span>
-              <h2 className="font-serif text-display-sm text-bakery-dark mt-3 text-balance">Succombez à la tentation</h2>
+              <span className="text-bakery-orange font-semibold tracking-[0.2em] uppercase text-xs">{t('signatures_kicker')}</span>
+              <h2 className="font-serif text-display-sm text-bakery-dark mt-3 text-balance">{t('signatures_titre')}</h2>
             </div>
             <Link to="/menu" className="hidden sm:inline-flex items-center gap-2 text-bakery-dark font-semibold hover:text-bakery-orange transition-colors">
               Toute la carte <ArrowRight size={18} />
@@ -114,22 +116,22 @@ export default function Home() {
             <BentoCard
               className="md:col-span-3 md:row-span-2"
               img={img.signature_1}
-              title="Le pain au levain" desc="Notre classique : croûte épaisse, mie alvéolée, 48 h de patience." tag="Signature"
+              title={t('signature_1_titre')} desc={t('signature_1_texte')} tag={t('signature_1_tag')}
             />
             <BentoCard
               className="md:col-span-3"
               img={img.signature_2}
-              title="Croissant pur beurre" desc="Feuilletage croustillant, cœur moelleux." tag="Chaque matin"
+              title={t('signature_2_titre')} desc={t('signature_2_texte')} tag={t('signature_2_tag')}
             />
             <BentoCard
               className="md:col-span-2"
               img={img.signature_3}
-              title="Tartelette framboise" desc="Sablé breton, crème diplomate." tag="De saison"
+              title={t('signature_3_titre')} desc={t('signature_3_texte')} tag={t('signature_3_tag')}
             />
             <Reveal className="md:col-span-1 rounded-4xl bg-bakery-dark text-bakery-light p-6 flex flex-col justify-between min-h-[12rem]">
               <PartyPopper className="text-bakery-honey" />
               <div>
-                <p className="font-serif text-2xl leading-tight">Un gâteau pour vos grands jours</p>
+                <p className="font-serif text-2xl leading-tight">{t('signature_evenement')}</p>
                 <Link to="/menu#evenements" className="inline-flex items-center gap-1.5 text-bakery-honey text-sm font-semibold mt-3 hover:text-bakery-light">Découvrir <ArrowRight size={14} /></Link>
               </div>
             </Reveal>
@@ -146,10 +148,10 @@ export default function Home() {
         <div className="container mx-auto px-6 relative z-10">
           <Reveal className="text-center max-w-2xl mx-auto mb-14">
             <span className="inline-flex items-center gap-2 text-bakery-orange font-semibold tracking-[0.2em] uppercase text-xs mb-3">
-              <PartyPopper size={16} /> Célébrez avec nous
+              <PartyPopper size={16} /> {t('evenements_kicker')}
             </span>
-            <h2 className="font-serif text-display-sm text-bakery-dark text-balance">Un gâteau pour chaque grand moment</h2>
-            <p className="text-bakery-brown/80 mt-4 text-pretty">Mariages, anniversaires, fiançailles — nous créons des gâteaux sur-mesure, pensés avec vous. Dégustation offerte pour les mariages.</p>
+            <h2 className="font-serif text-display-sm text-bakery-dark text-balance">{t('evenements_titre')}</h2>
+            <p className="text-bakery-brown/80 mt-4 text-pretty">{t('evenements_texte')}</p>
           </Reveal>
           <div className="grid sm:grid-cols-3 gap-5 max-w-4xl mx-auto mb-12">
             {[
@@ -166,7 +168,7 @@ export default function Home() {
           </div>
           <div className="text-center">
             <button onClick={() => openLea("Je voudrais un gâteau d'événement")} className="inline-flex items-center gap-2 bg-bakery-dark hover:bg-bakery-orange text-bakery-light px-8 py-4 rounded-full font-medium transition-colors">
-              Demander un devis à Léa <ArrowRight size={18} />
+              {t('evenements_bouton')} <ArrowRight size={18} />
             </button>
           </div>
         </div>
@@ -176,13 +178,13 @@ export default function Home() {
       <section className="py-24 bg-bakery-dark text-bakery-light relative overflow-hidden">
         <div className="container mx-auto px-6 relative z-10">
           <Reveal className="text-center mb-12">
-            <span className="text-bakery-honey font-semibold tracking-[0.2em] uppercase text-xs">Ils en parlent</span>
-            <h2 className="font-serif text-display-sm mt-3">Le mot des habitués</h2>
+            <span className="text-bakery-honey font-semibold tracking-[0.2em] uppercase text-xs">{t('avis_kicker')}</span>
+            <h2 className="font-serif text-display-sm mt-3">{t('avis_titre')}</h2>
           </Reveal>
           <div className="grid md:grid-cols-3 gap-6 max-w-5xl mx-auto">
             {avis.map((review, i) => (
               <motion.figure
-                key={review.name}
+                key={i}
                 initial={{ opacity: 0, y: 30, rotate: i === 1 ? 0 : i === 0 ? -2 : 2 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}

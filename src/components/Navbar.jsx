@@ -5,7 +5,7 @@ import { Menu, X, Croissant } from 'lucide-react';
 import { useBoutique } from '../hooks/useBoutique';
 import { setScrollLocked } from '../hooks/useSmoothScroll';
 import { openLea } from '../lib/lea';
-import { useSite } from '../site/SiteProvider';
+import { useSite, useText } from '../site/SiteProvider';
 
 const navLinks = [
   { name: 'Accueil', path: '/' },
@@ -43,6 +43,7 @@ export default function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const location = useLocation();
+  const t = useText();
 
   useEffect(() => { setIsOpen(false); }, [location]);
 
@@ -98,7 +99,7 @@ export default function Navbar() {
               onClick={() => openLea()}
               className="bg-bakery-dark hover:bg-bakery-orange text-bakery-light px-5 py-2.5 rounded-full text-sm font-medium transition-colors shadow-warm-sm"
             >
-              Commander avec Léa
+              {t('nav_bouton')}
             </button>
           </div>
 
@@ -149,7 +150,7 @@ export default function Navbar() {
               </div>
               <div className="mt-auto relative z-10">
                 <button onClick={() => { setIsOpen(false); openLea(); }} className="w-full bg-bakery-dark text-bakery-light px-6 py-3.5 rounded-full text-center font-medium">
-                  Commander avec Léa
+                  {t('nav_bouton')}
                 </button>
               </div>
             </motion.nav>

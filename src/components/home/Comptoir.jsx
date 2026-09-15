@@ -3,21 +3,24 @@ import { motion } from 'framer-motion';
 import { MessageCircle, ShieldCheck, Clock, Mail } from 'lucide-react';
 import Reveal from '../Reveal';
 import { openLea, teaseLea } from '../../lib/lea';
+import { useText } from '../../site/SiteProvider';
 
 // Le comptoir : quand on arrive devant, Léa se manifeste (bulle près du bouton).
 export default function Comptoir() {
   const ref = useRef(null);
+  const t = useText();
+  const bulle = t('comptoir_bulle');
 
   useEffect(() => {
     const el = ref.current;
     if (!el) return;
     let done = false;
     const io = new IntersectionObserver(([e]) => {
-      if (e.isIntersecting && !done) { done = true; teaseLea('Je vous sers quelque chose ? 🥐'); }
+      if (e.isIntersecting && !done) { done = true; teaseLea(bulle); }
     }, { threshold: 0.45 });
     io.observe(el);
     return () => io.disconnect();
-  }, []);
+  }, [bulle]);
 
   return (
     <section ref={ref} className="py-24 bg-bakery-dark text-bakery-light relative overflow-hidden">
@@ -26,11 +29,9 @@ export default function Comptoir() {
       <div className="container mx-auto px-6 relative z-10">
         <div className="grid lg:grid-cols-2 gap-14 items-center">
           <Reveal>
-            <span className="text-bakery-honey font-semibold tracking-[0.2em] uppercase text-xs">Au comptoir</span>
-            <h2 className="font-serif text-display-sm mt-3 mb-5 text-balance">Léa prend votre commande, comme au comptoir</h2>
-            <p className="text-bakery-light/70 leading-relaxed text-pretty mb-8">
-              Dites-lui ce qui vous ferait plaisir : elle connaît la carte, vérifie le créneau de retrait, note vos envies (une inscription sur le gâteau, une allergie) et vous envoie un email à valider. Un rappel arrive la veille.
-            </p>
+            <span className="text-bakery-honey font-semibold tracking-[0.2em] uppercase text-xs">{t('comptoir_kicker')}</span>
+            <h2 className="font-serif text-display-sm mt-3 mb-5 text-balance">{t('comptoir_titre')}</h2>
+            <p className="text-bakery-light/70 leading-relaxed text-pretty mb-8">{t('comptoir_texte')}</p>
             <ul className="grid sm:grid-cols-3 gap-4 mb-9 text-sm">
               {[
                 { icon: Clock, t: 'Créneaux vérifiés', d: 'Horaires et délais respectés' },
@@ -45,7 +46,7 @@ export default function Comptoir() {
               ))}
             </ul>
             <button onClick={() => openLea()} className="inline-flex items-center gap-2 bg-bakery-honey hover:bg-bakery-light text-bakery-dark px-7 py-3.5 rounded-full font-semibold transition-colors shadow-glow">
-              <MessageCircle size={18} /> Parler à Léa
+              <MessageCircle size={18} /> {t('comptoir_bouton')}
             </button>
           </Reveal>
 

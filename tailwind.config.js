@@ -25,8 +25,8 @@ export default {
         },
       },
       fontFamily: {
-        sans: ['"Instrument Sans"', 'Inter', 'system-ui', 'sans-serif'],
-        serif: ['Fraunces', '"Playfair Display"', 'Georgia', 'serif'],
+        sans: ['var(--font-sans)', '"Instrument Sans"', 'Inter', 'system-ui', 'sans-serif'],
+        serif: ['var(--font-serif)', 'Fraunces', '"Playfair Display"', 'Georgia', 'serif'],
         hand: ['Caveat', 'cursive'],
       },
       fontSize: {

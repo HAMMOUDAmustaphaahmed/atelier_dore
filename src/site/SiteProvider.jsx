@@ -4,6 +4,27 @@
 import { createContext, useContext, useEffect, useMemo, useState } from 'react';
 import { BOUTIQUE, HORAIRES_SEMAINE } from '../data/infos';
 import { pains, viennoiseries, patisseries, gateaux, gateauxEvenement } from '../data/products';
+import { texte } from '../data/content';
+
+// Polices proposées au propriétaire (chargées à la volée depuis Google Fonts).
+export const FONT_PRESETS = {
+  fraunces: { label: 'Fraunces (défaut, chaleureux)', serif: 'Fraunces', sans: 'Instrument Sans', css: 'family=Fraunces:ital,opsz,wght,SOFT@0,9..144,300..700,0..100;1,9..144,300..700,0..100&family=Instrument+Sans:ital,wght@0,400..700;1,400..700' },
+  playfair: { label: 'Playfair Display (classique)', serif: 'Playfair Display', sans: 'Inter', css: 'family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&family=Inter:wght@300;400;500;600' },
+  cormorant: { label: 'Cormorant Garamond (élégant)', serif: 'Cormorant Garamond', sans: 'Manrope', css: 'family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400&family=Manrope:wght@400;500;600;700' },
+  'dm-serif': { label: 'DM Serif Display (moderne)', serif: 'DM Serif Display', sans: 'DM Sans', css: 'family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@400;500;600;700' },
+  lora: { label: 'Lora (doux, lisible)', serif: 'Lora', sans: 'Nunito Sans', css: 'family=Lora:ital,wght@0,400;0,600;0,700;1,400&family=Nunito+Sans:wght@400;600;700' },
+};
+
+export function applyFonts(preset) {
+  const f = FONT_PRESETS[preset] || FONT_PRESETS.fraunces;
+  const id = 'site-fonts';
+  let link = document.getElementById(id);
+  if (!link) { link = document.createElement('link'); link.id = id; link.rel = 'stylesheet'; document.head.appendChild(link); }
+  const href = `https://fonts.googleapis.com/css2?${f.css}&family=Caveat:wght@500;700&display=swap`;
+  if (link.href !== href) link.href = href;
+  document.documentElement.style.setProperty('--font-serif', `"${f.serif}"`);
+  document.documentElement.style.setProperty('--font-sans', `"${f.sans}"`);
+}
 
 export const PALETTE_DEFAULT = {
   light: '#f6f1e7', cream: '#fbf8f1', sand: '#e9dfcb', gold: '#b8892e', honey: '#e0b054',
@@ -11,20 +32,20 @@ export const PALETTE_DEFAULT = {
 };
 
 export const IMAGES_DEFAULT = {
-  hero: 'https://images.unsplash.com/photo-1509440159596-0249088772ff?q=80&w=2072&auto=format&fit=crop',
-  intro: 'https://images.unsplash.com/photo-1549931319-a545dcf3bc73?q=80&w=1400&auto=format&fit=crop',
-  signature_1: 'https://images.unsplash.com/photo-1589367920969-ab8e050eb0e9?q=80&w=1400&auto=format&fit=crop',
-  signature_2: 'https://images.unsplash.com/photo-1555507036-ab1f40ce88cb?q=80&w=1200&auto=format&fit=crop',
-  signature_3: 'https://images.unsplash.com/photo-1565958011703-44f9829ba187?q=80&w=900&auto=format&fit=crop',
-  vitrine_1: 'https://images.unsplash.com/photo-1589367920969-ab8e050eb0e9?q=80&w=900&auto=format&fit=crop',
-  vitrine_2: 'https://images.unsplash.com/photo-1555507036-ab1f40ce88cb?q=80&w=900&auto=format&fit=crop',
-  vitrine_3: 'https://images.unsplash.com/photo-1565958011703-44f9829ba187?q=80&w=900&auto=format&fit=crop',
-  vitrine_4: 'https://images.unsplash.com/photo-1626803775151-61d756612f97?q=80&w=900&auto=format&fit=crop',
-  vitrine_5: 'https://images.unsplash.com/photo-1535254973040-607b474cb50d?q=80&w=900&auto=format&fit=crop',
-  vitrine_6: 'https://images.unsplash.com/photo-1509365465985-25d11c17e812?q=80&w=900&auto=format&fit=crop',
-  histoire_hero: 'https://images.unsplash.com/photo-1517686469429-8bdb88b9f907?q=80&w=2070&auto=format&fit=crop',
-  histoire_petrissage: 'https://images.unsplash.com/photo-1586444248902-2f64eddc13df?q=80&w=1400&auto=format&fit=crop',
-  histoire_ingredients: 'https://images.unsplash.com/photo-1505253716362-afaea1d3d1af?q=80&w=1400&auto=format&fit=crop',
+  hero: 'https://images.unsplash.com/photo-1509440159596-0249088772ff?q=65&w=1400&auto=format&fit=crop',
+  intro: 'https://images.unsplash.com/photo-1549931319-a545dcf3bc73?q=70&w=1000&auto=format&fit=crop',
+  signature_1: 'https://images.unsplash.com/photo-1589367920969-ab8e050eb0e9?q=70&w=1000&auto=format&fit=crop',
+  signature_2: 'https://images.unsplash.com/photo-1555507036-ab1f40ce88cb?q=70&w=900&auto=format&fit=crop',
+  signature_3: 'https://images.unsplash.com/photo-1565958011703-44f9829ba187?q=70&w=700&auto=format&fit=crop',
+  vitrine_1: 'https://images.unsplash.com/photo-1589367920969-ab8e050eb0e9?q=70&w=700&auto=format&fit=crop',
+  vitrine_2: 'https://images.unsplash.com/photo-1555507036-ab1f40ce88cb?q=70&w=700&auto=format&fit=crop',
+  vitrine_3: 'https://images.unsplash.com/photo-1565958011703-44f9829ba187?q=70&w=700&auto=format&fit=crop',
+  vitrine_4: 'https://images.unsplash.com/photo-1626803775151-61d756612f97?q=70&w=700&auto=format&fit=crop',
+  vitrine_5: 'https://images.unsplash.com/photo-1535254973040-607b474cb50d?q=70&w=700&auto=format&fit=crop',
+  vitrine_6: 'https://images.unsplash.com/photo-1509365465985-25d11c17e812?q=70&w=700&auto=format&fit=crop',
+  histoire_hero: 'https://images.unsplash.com/photo-1517686469429-8bdb88b9f907?q=65&w=1400&auto=format&fit=crop',
+  histoire_petrissage: 'https://images.unsplash.com/photo-1586444248902-2f64eddc13df?q=70&w=1000&auto=format&fit=crop',
+  histoire_ingredients: 'https://images.unsplash.com/photo-1505253716362-afaea1d3d1af?q=70&w=1000&auto=format&fit=crop',
 };
 
 const strip = (p) => ({ ...p, disponible: true });
@@ -32,23 +53,14 @@ const strip = (p) => ({ ...p, disponible: true });
 export const SITE_DEFAULT = {
   nom: BOUTIQUE.nom,
   slogan: 'Boulangerie & Pâtisserie artisanale',
-  textes: {
-    hero_kicker: "Cuit chaque matin, dès l'aube",
-    hero_titre: "L'art de la tradition,",
-    hero_titre_accent: "le goût de l'innovation",
-    hero_sous_titre: 'Pains au levain, viennoiseries pur beurre et pâtisseries de saison, sortis du four à bois trois fois par jour.',
-    intro_titre: 'Vingt ans de levain, un seul secret : ne pas se presser.',
-    intro_texte: 'Farines biologiques de moulins à moins de 100 km, fermentation lente de 24 à 48 h, four à bois. Rien de plus, rien de moins.',
-    footer_accroche: "Le pain chaud n'attend pas.",
-    footer_accroche_accent: 'Réservez le vôtre.',
-    footer_description: 'Boulangerie-pâtisserie artisanale. Levain naturel, farines bio, four à bois — et des artisans qui prennent le temps.',
-  },
+  textes: {},
   boutique: { ...BOUTIQUE, coords: [48.8606, 2.3376], instagram: '', facebook: '' },
   horaires: HORAIRES_SEMAINE,
   fournees: [7, 11, 16],
   palette: PALETTE_DEFAULT,
   images: IMAGES_DEFAULT,
   produits: { pains: pains.map(strip), viennoiseries: viennoiseries.map(strip), patisseries: patisseries.map(strip), gateaux: gateaux.map(strip), evenements: gateauxEvenement.map(strip) },
+  police: 'fraunces',
   board: null,
   closures: [],
   version: 0,
@@ -98,6 +110,7 @@ export function SiteProvider({ children }) {
   }, []);
 
   useEffect(() => { applyPalette(site.palette); }, [site.palette]);
+  useEffect(() => { applyFonts(site.police); }, [site.police]);
   useEffect(() => { if (site.nom) document.title = `${site.nom} | ${site.slogan}`; }, [site.nom, site.slogan]);
 
   const value = useMemo(() => site, [site]);
@@ -106,4 +119,10 @@ export function SiteProvider({ children }) {
 
 export function useSite() {
   return useContext(SiteContext);
+}
+
+/** t('cle') → texte du registre (surcharge du propriétaire ou défaut). */
+export function useText() {
+  const { textes } = useContext(SiteContext);
+  return (key) => texte(textes, key);
 }

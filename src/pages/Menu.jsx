@@ -7,12 +7,12 @@ import { GateauAnniversaire, GateauMariage, GateauFiancailles } from '../compone
 import { getLenis } from '../hooks/useSmoothScroll';
 import { openLea } from '../lib/lea';
 import { useBoutique } from '../hooks/useBoutique';
-import { useSite } from '../site/SiteProvider';
+import { useSite, useText } from '../site/SiteProvider';
 
 const EVENT_ICONS = { anniversaire: GateauAnniversaire, mariage: GateauMariage, fiancailles: GateauFiancailles };
 
 const SECTION_DEFS = [
-  { id: 'pains', label: 'Pains', note: 'La sélection varie chaque jour selon la fournée — demandez conseil en boutique, ou réservez avec Léa.' },
+  { id: 'pains', label: 'Pains', note: 'carte_note_pains' },
   { id: 'viennoiseries', label: 'Viennoiseries' },
   { id: 'patisseries', label: 'Pâtisseries' },
   { id: 'gateaux', label: 'Gâteaux' },
@@ -47,6 +47,7 @@ function scrollTo(id) {
 
 export default function Menu() {
   const { produits } = useSite();
+  const t = useText();
   const visible = (list) => (list || []).filter((p) => p.disponible !== false);
   const SECTIONS = SECTION_DEFS.map((d) => (d.id === 'evenements' ? d : { ...d, items: visible(produits[d.id]) }));
   const gateauxEvenement = visible(produits.evenements);
@@ -65,10 +66,10 @@ export default function Menu() {
       <section className="pt-36 pb-12 relative grain">
         <div className="container mx-auto px-6 relative z-10">
           <Reveal className="max-w-3xl">
-            <span className="text-bakery-orange font-semibold tracking-[0.2em] uppercase text-xs">La carte</span>
-            <h1 className="font-serif text-display text-bakery-dark mt-3 mb-5 text-balance">Ce qui sort du four aujourd'hui</h1>
+            <span className="text-bakery-orange font-semibold tracking-[0.2em] uppercase text-xs">{t('carte_kicker')}</span>
+            <h1 className="font-serif text-display text-bakery-dark mt-3 mb-5 text-balance">{t('carte_titre')}</h1>
             <p className="text-lg text-bakery-brown/80 text-pretty max-w-2xl">
-              Chaque jour, nos artisans préparent une sélection de produits frais. Tout se commande avec Léa, retrait en boutique.
+              {t('carte_texte')}
               {nextBatch && <> Prochaine fournée : <strong className="text-bakery-dark">{nextBatch.today ? `${nextBatch.hour} (${nextBatch.label})` : nextBatch.label}</strong>.</>}
             </p>
           </Reveal>
@@ -108,7 +109,7 @@ export default function Menu() {
             {s.note && (
               <Reveal delay={0.05} className="flex items-start gap-2 text-sm text-bakery-brown mb-8 bg-bakery-honey/15 border border-bakery-gold/30 rounded-2xl px-4 py-3 max-w-2xl">
                 <Info size={16} className="text-bakery-orange shrink-0 mt-0.5" />
-                <span>{s.note}</span>
+                <span>{t(s.note)}</span>
               </Reveal>
             )}
             {!s.note && <div className="h-px bg-bakery-sand mb-8" />}
@@ -129,10 +130,8 @@ export default function Menu() {
             <span className="inline-flex items-center gap-2 text-bakery-honey font-semibold tracking-[0.2em] uppercase text-xs mb-4">
               <PartyPopper size={16} /> Célébrez avec nous
             </span>
-            <h2 className="font-serif text-display-sm mb-4 text-balance">Des gâteaux pour vos plus beaux jours</h2>
-            <p className="text-bakery-light/70 max-w-2xl mx-auto text-pretty">
-              Anniversaires, mariages, fiançailles : nous imaginons avec vous une création unique. Devis sous 24 h, dégustation offerte pour les mariages.
-            </p>
+            <h2 className="font-serif text-display-sm mb-4 text-balance">{t('carte_evenements_titre')}</h2>
+            <p className="text-bakery-light/70 max-w-2xl mx-auto text-pretty">{t('carte_evenements_texte')}</p>
           </Reveal>
 
           <div className="grid md:grid-cols-3 gap-6 mb-14">
@@ -158,9 +157,9 @@ export default function Menu() {
 
           <Reveal delay={0.15} className="text-center">
             <button onClick={() => openLea("Je voudrais un gâteau d'événement sur-mesure")} className="inline-flex items-center gap-2 bg-bakery-honey hover:bg-bakery-light text-bakery-dark px-8 py-4 rounded-full text-lg font-semibold transition-colors shadow-glow">
-              Composer mon gâteau avec Léa <ArrowRight size={20} />
+              {t('carte_evenements_bouton')} <ArrowRight size={20} />
             </button>
-            <p className="text-bakery-light/50 text-sm mt-4">Réponse sous 24 h · Dégustation possible sur rendez-vous</p>
+            <p className="text-bakery-light/50 text-sm mt-4">{t('carte_evenements_mention')}</p>
           </Reveal>
         </div>
       </section>

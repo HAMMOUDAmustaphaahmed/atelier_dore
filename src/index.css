@@ -14,6 +14,8 @@
     --bakery-dark: 27 21 18;
     --bakery-ember: 44 30 22;
     --bakery-orange: 201 98 43;
+    --font-serif: "Fraunces";
+    --font-sans: "Instrument Sans";
   }
   html { scroll-behavior: smooth; }
   body { overflow-x: hidden; font-feature-settings: 'ss01', 'cv11'; }

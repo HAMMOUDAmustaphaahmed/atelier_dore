@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { MessageCircle, X, Send, Croissant, PhoneCall } from 'lucide-react';
-import { useSite } from '../site/SiteProvider';
+import { useSite, useText } from '../site/SiteProvider';
 import { LEA_EVENT } from '../lib/lea';
 
 const QUICK_REPLIES = [
@@ -12,10 +12,7 @@ const QUICK_REPLIES = [
   'Je veux commander',
 ];
 
-const WELCOME = {
-  from: 'bot',
-  text: "Bonjour, je suis Léa 👋 Je peux vous renseigner sur nos produits, nos horaires, et préparer votre commande ou votre gâteau d'événement.",
-};
+
 
 const LIMIT_TEXT = "Nous avons atteint la limite de cette conversation. Pour continuer, appelez-nous ou écrivez-nous via le formulaire — l'équipe vous répond sous 24 h.";
 
@@ -76,6 +73,8 @@ async function readSse(response, onEvent) {
 
 export default function Chatbot() {
   const { nom, boutique: BOUTIQUE } = useSite();
+  const t = useText();
+  const WELCOME = { from: 'bot', text: t('lea_accueil') };
   const [open, setOpen] = useState(false);
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');

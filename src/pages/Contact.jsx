@@ -10,14 +10,9 @@ import Reveal from '../components/Reveal';
 import MapBoutique from '../components/MapBoutique';
 import { StatusPill } from '../components/Navbar';
 import { horairesAffichage } from '../data/infos';
-import { useSite } from '../site/SiteProvider';
+import { useSite, useText } from '../site/SiteProvider';
 
-const FAQ = [
-  { q: 'Prenez-vous les commandes pour des événements ?', r: 'Oui, gâteaux de mariage, anniversaires et buffets salés-sucrés pour vos réceptions. Un délai de 72h est recommandé.' },
-  { q: 'Proposez-vous des options sans gluten ?', r: 'Une sélection de pains et de pâtisseries sans gluten est disponible sur commande, préparée dans un espace dédié.' },
-  { q: 'Livrez-vous les commandes ?', r: 'La livraison est possible dans un rayon de 5 km pour les commandes de plus de 30€, tous les jours.' },
-  { q: 'Acceptez-vous les cartes bancaires ?', r: 'Carte, espèces et titres-restaurant sont acceptés en boutique.' },
-];
+
 
 const SUBJECTS = [
   { key: 'info', label: 'Information générale', icon: Info, desc: 'Une question sur nos produits, nos horaires…' },
@@ -68,6 +63,8 @@ const STEP_LABELS = ['Objet', 'Détails', 'Envoyé'];
 
 export default function Contact() {
   const { boutique: BOUTIQUE, horaires, nom } = useSite();
+  const t = useText();
+  const FAQ = [1, 2, 3, 4].map((i) => ({ q: t(`faq_${i}_q`), r: t(`faq_${i}_r`) })).filter((f) => f.q);
   const HORAIRES = horairesAffichage(horaires);
   const location = useLocation();
   const preselected = matchSubjectKey(location.state?.subject);
@@ -126,12 +123,9 @@ export default function Contact() {
       />
       <div className="container mx-auto px-6 max-w-6xl relative z-10">
         <Reveal className="text-center mb-10">
-          <span className="text-bakery-orange font-semibold tracking-[0.2em] uppercase text-xs">Contact</span>
-          <h1 className="font-serif text-display text-bakery-dark mt-3 mb-6 text-balance">Écrivez-nous, ou passez la porte</h1>
-          <p className="text-bakery-brown/80 text-lg max-w-2xl mx-auto text-pretty">
-            Une question ? Une envie de gâteau personnalisé pour un événement ?
-            N'hésitez pas à nous contacter ou à passer nous voir.
-          </p>
+          <span className="text-bakery-orange font-semibold tracking-[0.2em] uppercase text-xs">{t('contact_kicker')}</span>
+          <h1 className="font-serif text-display text-bakery-dark mt-3 mb-6 text-balance">{t('contact_titre')}</h1>
+          <p className="text-bakery-brown/80 text-lg max-w-2xl mx-auto text-pretty">{t('contact_texte')}</p>
         </Reveal>
 
         <Reveal delay={0.1} className="flex justify-center mb-16"><StatusPill /></Reveal>
@@ -353,7 +347,7 @@ export default function Contact() {
         </div>
 
         <Reveal delay={0.15} className="max-w-3xl mx-auto mt-24">
-          <h2 className="font-serif text-display-sm text-bakery-dark text-center mb-10">Questions fréquentes</h2>
+          <h2 className="font-serif text-display-sm text-bakery-dark text-center mb-10">{t('faq_titre')}</h2>
           <div className="space-y-3">
             {FAQ.map((f, i) => (
               <div key={i} className="bg-bakery-cream rounded-2xl border border-bakery-sand shadow-warm-sm overflow-hidden">

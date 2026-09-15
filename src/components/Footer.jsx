@@ -2,10 +2,12 @@ import { Link } from 'react-router-dom';
 import { Croissant, Instagram, Facebook, MapPin, Phone, Mail, ArrowUpRight } from 'lucide-react';
 import { horairesAffichage } from '../data/infos';
 import { openLea } from '../lib/lea';
-import { useSite } from '../site/SiteProvider';
+import { useSite, useText } from '../site/SiteProvider';
 
 export default function Footer() {
-  const { nom, textes, boutique: BOUTIQUE, horaires } = useSite();
+  const { nom, boutique: BOUTIQUE, horaires } = useSite();
+  const t = useText();
+  const textes = { footer_accroche: t('footer_accroche'), footer_accroche_accent: t('footer_accroche_accent'), footer_description: t('footer_description') };
   const HORAIRES_AFFICHAGE = horairesAffichage(horaires);
   return (
     <footer className="bg-bakery-dark text-bakery-light relative overflow-hidden">
@@ -16,7 +18,7 @@ export default function Footer() {
             {textes.footer_accroche} <span className="italic font-light text-bakery-honey">{textes.footer_accroche_accent}</span>
           </h2>
           <button onClick={() => openLea()} className="self-start lg:self-auto inline-flex items-center gap-2 bg-bakery-honey hover:bg-bakery-light text-bakery-dark px-7 py-4 rounded-full font-semibold transition-colors shadow-glow">
-            Commander avec Léa <ArrowUpRight size={18} />
+            {t('nav_bouton')} <ArrowUpRight size={18} />
           </button>
         </div>
       </div>
@@ -68,7 +70,7 @@ export default function Footer() {
 
       <div className="container mx-auto px-6 py-6 border-t border-white/10 flex flex-col sm:flex-row justify-between gap-2 text-xs text-bakery-light/40">
         <span>© {new Date().getFullYear()} {nom}. Tous droits réservés.</span>
-        <span>Fait avec du levain et un peu de code.</span>
+        <span>{t('footer_signature')}</span>
       </div>
     </footer>
   );

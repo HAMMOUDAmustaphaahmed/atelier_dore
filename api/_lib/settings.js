@@ -26,21 +26,21 @@ export const PALETTE_PRESETS = {
 
 // Emplacements d'images sur le site (le Chef s'en sert pour suggérer où placer une photo).
 export const IMAGE_SLOTS = {
-  hero: { label: "Grande image d'accueil (la croûte qui se fend)", page: 'Accueil', defaut: 'https://images.unsplash.com/photo-1509440159596-0249088772ff?q=80&w=2072&auto=format&fit=crop' },
-  intro: { label: "Portrait de l'artisan (accueil, section « fait à la main »)", page: 'Accueil', defaut: 'https://images.unsplash.com/photo-1549931319-a545dcf3bc73?q=80&w=1400&auto=format&fit=crop' },
-  signature_1: { label: 'Signature n°1 — grande carte (pain au levain)', page: 'Accueil', defaut: 'https://images.unsplash.com/photo-1589367920969-ab8e050eb0e9?q=80&w=1400&auto=format&fit=crop' },
-  signature_2: { label: 'Signature n°2 (croissant)', page: 'Accueil', defaut: 'https://images.unsplash.com/photo-1555507036-ab1f40ce88cb?q=80&w=1200&auto=format&fit=crop' },
-  signature_3: { label: 'Signature n°3 (tartelette)', page: 'Accueil', defaut: 'https://images.unsplash.com/photo-1565958011703-44f9829ba187?q=80&w=900&auto=format&fit=crop' },
-  vitrine_1: { label: 'Vitrine — carte 1 (pain au levain)', page: 'Accueil', defaut: 'https://images.unsplash.com/photo-1589367920969-ab8e050eb0e9?q=80&w=900&auto=format&fit=crop' },
-  vitrine_2: { label: 'Vitrine — carte 2 (croissant)', page: 'Accueil', defaut: 'https://images.unsplash.com/photo-1555507036-ab1f40ce88cb?q=80&w=900&auto=format&fit=crop' },
-  vitrine_3: { label: 'Vitrine — carte 3 (tartelette)', page: 'Accueil', defaut: 'https://images.unsplash.com/photo-1565958011703-44f9829ba187?q=80&w=900&auto=format&fit=crop' },
-  vitrine_4: { label: 'Vitrine — carte 4 (Paris-Brest)', page: 'Accueil', defaut: 'https://images.unsplash.com/photo-1626803775151-61d756612f97?q=80&w=900&auto=format&fit=crop' },
-  vitrine_5: { label: 'Vitrine — carte 5 (wedding cake)', page: 'Accueil', defaut: 'https://images.unsplash.com/photo-1535254973040-607b474cb50d?q=80&w=900&auto=format&fit=crop' },
-  vitrine_6: { label: 'Vitrine — carte 6 (kouign-amann)', page: 'Accueil', defaut: 'https://images.unsplash.com/photo-1509365465985-25d11c17e812?q=80&w=900&auto=format&fit=crop' },
-  histoire_hero: { label: "Bandeau de la page Histoire (l'atelier)", page: 'Histoire', defaut: 'https://images.unsplash.com/photo-1517686469429-8bdb88b9f907?q=80&w=2070&auto=format&fit=crop' },
-  histoire_petrissage: { label: 'Histoire — photo « pétrissage »', page: 'Histoire', defaut: 'https://images.unsplash.com/photo-1586444248902-2f64eddc13df?q=80&w=1400&auto=format&fit=crop' },
-  histoire_ingredients: { label: 'Histoire — photo « ingrédients »', page: 'Histoire', defaut: 'https://images.unsplash.com/photo-1505253716362-afaea1d3d1af?q=80&w=1400&auto=format&fit=crop' },
-  og: { label: 'Image de partage (réseaux sociaux, aperçu de lien)', page: 'Global', defaut: 'https://images.unsplash.com/photo-1509440159596-0249088772ff?q=80&w=1200&auto=format&fit=crop' },
+  hero: { label: "Grande image d'accueil (la croûte qui se fend)", page: 'Accueil', defaut: 'https://images.unsplash.com/photo-1509440159596-0249088772ff?q=65&w=1400&auto=format&fit=crop' },
+  intro: { label: "Portrait de l'artisan (accueil, section « fait à la main »)", page: 'Accueil', defaut: 'https://images.unsplash.com/photo-1549931319-a545dcf3bc73?q=70&w=1000&auto=format&fit=crop' },
+  signature_1: { label: 'Signature n°1 — grande carte (pain au levain)', page: 'Accueil', defaut: 'https://images.unsplash.com/photo-1589367920969-ab8e050eb0e9?q=70&w=1000&auto=format&fit=crop' },
+  signature_2: { label: 'Signature n°2 (croissant)', page: 'Accueil', defaut: 'https://images.unsplash.com/photo-1555507036-ab1f40ce88cb?q=70&w=900&auto=format&fit=crop' },
+  signature_3: { label: 'Signature n°3 (tartelette)', page: 'Accueil', defaut: 'https://images.unsplash.com/photo-1565958011703-44f9829ba187?q=70&w=700&auto=format&fit=crop' },
+  vitrine_1: { label: 'Vitrine — carte 1 (pain au levain)', page: 'Accueil', defaut: 'https://images.unsplash.com/photo-1589367920969-ab8e050eb0e9?q=70&w=700&auto=format&fit=crop' },
+  vitrine_2: { label: 'Vitrine — carte 2 (croissant)', page: 'Accueil', defaut: 'https://images.unsplash.com/photo-1555507036-ab1f40ce88cb?q=70&w=700&auto=format&fit=crop' },
+  vitrine_3: { label: 'Vitrine — carte 3 (tartelette)', page: 'Accueil', defaut: 'https://images.unsplash.com/photo-1565958011703-44f9829ba187?q=70&w=700&auto=format&fit=crop' },
+  vitrine_4: { label: 'Vitrine — carte 4 (Paris-Brest)', page: 'Accueil', defaut: 'https://images.unsplash.com/photo-1626803775151-61d756612f97?q=70&w=700&auto=format&fit=crop' },
+  vitrine_5: { label: 'Vitrine — carte 5 (wedding cake)', page: 'Accueil', defaut: 'https://images.unsplash.com/photo-1535254973040-607b474cb50d?q=70&w=700&auto=format&fit=crop' },
+  vitrine_6: { label: 'Vitrine — carte 6 (kouign-amann)', page: 'Accueil', defaut: 'https://images.unsplash.com/photo-1509365465985-25d11c17e812?q=70&w=700&auto=format&fit=crop' },
+  histoire_hero: { label: "Bandeau de la page Histoire (l'atelier)", page: 'Histoire', defaut: 'https://images.unsplash.com/photo-1517686469429-8bdb88b9f907?q=65&w=1400&auto=format&fit=crop' },
+  histoire_petrissage: { label: 'Histoire — photo « pétrissage »', page: 'Histoire', defaut: 'https://images.unsplash.com/photo-1586444248902-2f64eddc13df?q=70&w=1000&auto=format&fit=crop' },
+  histoire_ingredients: { label: 'Histoire — photo « ingrédients »', page: 'Histoire', defaut: 'https://images.unsplash.com/photo-1505253716362-afaea1d3d1af?q=70&w=1000&auto=format&fit=crop' },
+  og: { label: 'Image de partage (réseaux sociaux, aperçu de lien)', page: 'Global', defaut: 'https://images.unsplash.com/photo-1509440159596-0249088772ff?q=70&w=900&auto=format&fit=crop' },
 };
 
 export const CATEGORIES = ['pains', 'viennoiseries', 'patisseries', 'gateaux', 'evenements'];
@@ -51,17 +51,7 @@ const strip = (p) => ({ name: p.name, desc: p.desc, icon: p.icon, ...(p.price ? 
 export const DEFAULTS = {
   nom: BOUTIQUE.nom,
   slogan: 'Boulangerie & Pâtisserie artisanale',
-  textes: {
-    hero_kicker: "Cuit chaque matin, dès l'aube",
-    hero_titre: "L'art de la tradition,",
-    hero_titre_accent: "le goût de l'innovation",
-    hero_sous_titre: 'Pains au levain, viennoiseries pur beurre et pâtisseries de saison, sortis du four à bois trois fois par jour.',
-    intro_titre: 'Vingt ans de levain, un seul secret : ne pas se presser.',
-    intro_texte: 'Farines biologiques de moulins à moins de 100 km, fermentation lente de 24 à 48 h, four à bois. Rien de plus, rien de moins.',
-    footer_accroche: "Le pain chaud n'attend pas.",
-    footer_accroche_accent: 'Réservez le vôtre.',
-    footer_description: 'Boulangerie-pâtisserie artisanale. Levain naturel, farines bio, four à bois — et des artisans qui prennent le temps.',
-  },
+  textes: {},            // surcharges du registre src/data/content.js
   boutique: { adresse: BOUTIQUE.adresse, codePostal: BOUTIQUE.codePostal, ville: BOUTIQUE.ville, pays: BOUTIQUE.pays, telephone: BOUTIQUE.telephone, email: BOUTIQUE.email, coords: [48.8606, 2.3376], instagram: '', facebook: '' },
   horaires: HORAIRES_SEMAINE,          // { 0..6: [ouverture, fermeture] | null }
   fournees: [7, 11, 16],
@@ -74,8 +64,11 @@ export const DEFAULTS = {
     gateaux: gateaux.map(strip),
     evenements: gateauxEvenement.map(strip),
   },
+  police: 'fraunces',
   version: 0,
 };
+
+export const FONT_PRESETS = ['fraunces', 'playfair', 'cormorant', 'dm-serif', 'lora'];
 
 function deepMerge(base, patch) {
   if (Array.isArray(patch) || patch === null || typeof patch !== 'object') return patch === undefined ? base : patch;

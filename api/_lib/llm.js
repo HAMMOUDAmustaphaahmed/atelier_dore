@@ -35,7 +35,7 @@ export async function runTurn(p) {
 export async function complete({ system, user, maxTokens = 10, model }) {
   if (env.provider === 'groq') {
     assertEnv(['groqKey']);
-    groq ||= new Groq({ apiKey: env.groqKey });
+    groq ||= new Groq({ apiKey: env.groqKey, maxRetries: 6 }); // palier gratuit : 8k tokens/min → on attend plutôt qu'échouer
     const res = await groq.chat.completions.create({
       model: model || env.guardModel,
       max_completion_tokens: maxTokens,
@@ -134,7 +134,7 @@ async function groqTurn(p) {
   const { system, tools, messages, maxTokens, onText } = p;
   const model = p.model || env.model;
   assertEnv(['groqKey']);
-  groq ||= new Groq({ apiKey: env.groqKey });
+  groq ||= new Groq({ apiKey: env.groqKey, maxRetries: 6 }); // palier gratuit : 8k tokens/min → on attend plutôt qu'échouer
 
   const stream = await groq.chat.completions.create({
     model,

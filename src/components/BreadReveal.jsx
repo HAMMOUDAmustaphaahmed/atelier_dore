@@ -17,7 +17,7 @@ function makeCrumbs(n = 60) {
   return Array.from({ length: n }, () => ({ cx: 20 + rnd() * 60, cy: 10 + rnd() * 80, r: 1 + rnd() * 3.5 }));
 }
 
-export default function BreadReveal({ image, kicker, title, subtitle, children, aside }) {
+export default function BreadReveal({ image, kicker, title, subtitle, children, aside, scrollLabel = 'Défiler pour entrer' }) {
   const sectionRef = useRef(null);
   const leftRef = useRef(null);
   const rightRef = useRef(null);
@@ -75,7 +75,7 @@ export default function BreadReveal({ image, kicker, title, subtitle, children, 
         {aside && <div className="absolute bottom-6 left-6 z-10 hidden md:block">{aside}</div>}
 
         <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-10 flex flex-col items-center gap-2 text-bakery-light/70">
-          <span className="text-[0.65rem] tracking-[0.25em] uppercase">Défiler pour entrer</span>
+          <span className="text-[0.65rem] tracking-[0.25em] uppercase">{scrollLabel}</span>
           <span className="block w-px h-8 bg-bakery-light/40 animate-floaty" />
         </div>
       </div>

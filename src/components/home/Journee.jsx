@@ -4,23 +4,32 @@ import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { Wheat, Flame, DoorOpen, Sun, Moon } from 'lucide-react';
 import Reveal from '../Reveal';
 import { useBoutique } from '../../hooks/useBoutique';
+import { useText, useSite } from '../../site/SiteProvider';
 
 gsap.registerPlugin(ScrollTrigger);
 
 // Une journée à l'Atelier : la ligne se dessine au fil du scroll, l'étape en cours pulse.
-const STEPS = [
-  { h: 4, label: '4 h', title: 'Le pétrissage', text: "Le levain a travaillé toute la nuit. On pétrit à la main, farine T65 et sel de Guérande.", icon: Wheat },
-  { h: 6, label: '6 h', title: 'Le four à bois', text: 'Les premières miches entrent dans le four. Le quartier sent le pain chaud.', icon: Flame },
-  { h: 7, label: '7 h', title: 'Ouverture', text: 'La cloche de la porte sonne. Croissants tièdes, café voisin, premiers habitués.', icon: DoorOpen },
-  { h: 11, label: '11 h', title: 'Deuxième fournée', text: "Baguettes tradition et pains spéciaux pour le déjeuner. C'est l'heure de pointe.", icon: Sun },
-  { h: 16, label: '16 h', title: 'Dernière fournée', text: 'Pain frais pour le dîner, et les pâtisseries de fin de journée sortent du labo.', icon: Flame },
-  { h: 17, label: '17 h', title: 'Fermeture', text: "On éteint le four. Les invendus partent aux associations du quartier.", icon: Moon },
+const STEP_META = [
+  { h: 4, label: '4 h', icon: Wheat },
+  { h: 6, label: '6 h', icon: Flame },
+  { h: 'open', icon: DoorOpen },
+  { h: 11, label: '11 h', icon: Sun },
+  { h: 16, label: '16 h', icon: Flame },
+  { h: 'close', icon: Moon },
 ];
+const fmtH = (d) => { const h = Math.floor(d); const m = Math.round((d - h) * 60); return `${h} h${m ? ` ${String(m).padStart(2, '0')}` : ''}`; };
 
 export default function Journee() {
   const lineRef = useRef(null);
   const wrapRef = useRef(null);
   const { now } = useBoutique();
+  const t = useText();
+  const { horaires } = useSite();
+  const plage = horaires?.[now.day] || [7, 17];
+  const STEPS = STEP_META.map((m, i) => {
+    const h = m.h === 'open' ? plage[0] : m.h === 'close' ? plage[1] : m.h;
+    return { h, label: m.label || fmtH(h), icon: m.icon, title: t(`journee_${i + 1}_titre`), text: t(`journee_${i + 1}_texte`) };
+  });
   const currentIdx = STEPS.reduce((acc, s, i) => (now.decimal >= s.h ? i : acc), -1);
 
   useEffect(() => {
@@ -37,8 +46,8 @@ export default function Journee() {
     <section className="py-24 bg-bakery-cream relative grain">
       <div className="container mx-auto px-6 relative z-10">
         <Reveal className="max-w-2xl mb-16">
-          <span className="text-bakery-orange font-semibold tracking-[0.2em] uppercase text-xs">Dans les coulisses</span>
-          <h2 className="font-serif text-display-sm text-bakery-dark mt-3 text-balance">Une journée à l'Atelier</h2>
+          <span className="text-bakery-orange font-semibold tracking-[0.2em] uppercase text-xs">{t('journee_kicker')}</span>
+          <h2 className="font-serif text-display-sm text-bakery-dark mt-3 text-balance">{t('journee_titre')}</h2>
         </Reveal>
 
         <div ref={wrapRef} className="relative max-w-3xl mx-auto">
@@ -51,7 +60,7 @@ export default function Journee() {
               const left = i % 2 === 0;
               const active = i === currentIdx;
               return (
-                <li key={s.label} className={`relative sm:grid sm:grid-cols-2 sm:gap-12 pl-16 sm:pl-0 ${left ? '' : ''}`}>
+                <li key={i} className={`relative sm:grid sm:grid-cols-2 sm:gap-12 pl-16 sm:pl-0 ${left ? '' : ''}`}>
                   <span className={`absolute left-0 sm:left-1/2 sm:-translate-x-1/2 top-0 w-11 h-11 rounded-full flex items-center justify-center border-2 bg-bakery-cream z-10 ${
                     active ? 'border-bakery-orange text-bakery-orange shadow-[0_0_0_8px_rgba(201,98,43,0.12)]' : 'border-bakery-sand text-bakery-brown'
                   }`}>

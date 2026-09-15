@@ -63,10 +63,21 @@ export function buildOrder(input, now = new Date(), ctx = {}) {
   let total = 0;
   let totalIndicatif = false;
   const articles = [];
+  const evenementDemande = !!input?.evenement;
   for (const it of rawItems) {
-    const produit = findProduct(String(it?.produit || ''), catalogue);
+    const libelle = String(it?.produit || '').trim();
+    let produit = findProduct(libelle, catalogue);
+    let notesExtra = '';
+    // Gâteau d'événement : le client décrit librement (parfums, étages…) → on rattache
+    // au produit « Gâteau d'événement — <type> » et on garde la description en note.
+    if (!produit && (evenementDemande || /g[âa]teau|wedding|pi[èe]ce mont[ée]e/i.test(libelle))) {
+      const type = String(input?.evenement?.type || '').toLowerCase();
+      const evts = catalogue.filter((p) => p.categorie === 'evenement');
+      produit = evts.find((p) => type && p.nom.toLowerCase().includes(type.slice(0, 5))) || evts[0] || null;
+      if (produit) notesExtra = libelle && libelle.toLowerCase() !== produit.nom.toLowerCase() ? `Souhait : ${libelle}` : '';
+    }
     const quantite = Math.round(Number(it?.quantite));
-    if (!produit) { erreurs.push(`Produit inconnu : « ${it?.produit} ». Utilise les noms exacts du catalogue.`); continue; }
+    if (!produit) { erreurs.push(`Produit inconnu : « ${libelle} ». Utilise les noms exacts du catalogue (get_catalogue).`); continue; }
     if (!Number.isFinite(quantite) || quantite < 1 || quantite > MAX_QTY) { erreurs.push(`Quantité invalide pour ${produit.nom} (1 à ${MAX_QTY}).`); continue; }
     const { value, indicatif } = parsePrice(produit.prix);
     if (DELAIS_COMMANDE[produit.categorie] > DELAIS_COMMANDE[categorieMax]) categorieMax = produit.categorie;
@@ -76,7 +87,7 @@ export function buildOrder(input, now = new Date(), ctx = {}) {
       categorie: produit.categorie,
       quantite,
       prix_unitaire: produit.prix,
-      notes: String(it?.notes || '').trim().slice(0, 300) || null,
+      notes: [notesExtra, String(it?.notes || '').trim()].filter(Boolean).join(' · ').slice(0, 300) || null,
     });
   }
 

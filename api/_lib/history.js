@@ -46,5 +46,16 @@ export function toApiMessages(rows, turns = env.historyTurns) {
   }
   // Le premier message doit être un message utilisateur.
   while (messages.length && messages[0].role !== 'user') messages.shift();
+
+  // Résultats d'outils des anciens tours (catalogue, créneaux…) : volumineux et
+  // inutiles ensuite → remplacés par un court résumé pour économiser les tokens.
+  const userText = messages.map((m, i) => (m.role === 'user' && typeof m.content === 'string' ? i : -1)).filter((i) => i >= 0);
+  const cutoff = userText.length > 2 ? userText[userText.length - 2] : 0;
+  for (let i = 0; i < cutoff; i++) {
+    const m = messages[i];
+    if (m.role === 'user' && Array.isArray(m.content)) {
+      m.content = m.content.map((b) => (b.type === 'tool_result' ? { ...b, content: '(résultat omis — ancien tour)' } : b));
+    }
+  }
   return messages;
 }

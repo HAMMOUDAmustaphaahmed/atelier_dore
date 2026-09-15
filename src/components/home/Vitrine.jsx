@@ -3,24 +3,19 @@ import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { ArrowUpRight } from 'lucide-react';
 import { openLea } from '../../lib/lea';
-import { useSite } from '../../site/SiteProvider';
+import { useSite, useText } from '../../site/SiteProvider';
 
 gsap.registerPlugin(ScrollTrigger);
 
 // La vitrine : on "longe" le comptoir en scrollant. Défilement horizontal piloté par
 // le scroll vertical — position: sticky en CSS, GSAP n'anime qu'un transform
 // (jamais de pin: true, incompatible avec le démontage React).
-const ITEMS = [
-  { name: 'Pain au levain', tag: 'Signature', desc: 'Fermentation lente de 48 h, croûte épaisse, mie dense et parfumée.' },
-  { name: 'Croissant pur beurre', tag: 'Chaque matin', desc: 'Beurre AOP Charentes-Poitou, 27 couches de feuilletage.' },
-  { name: 'Tartelette framboise', tag: 'Pâtisserie', desc: 'Sablé breton, crème diplomate et fruits frais du marché.' },
-  { name: 'Paris-Brest', tag: 'Classique', desc: 'Pâte à choux et mousseline au praliné noisette maison.' },
-  { name: 'Wedding cake', tag: 'Sur-mesure', desc: 'Étages, dégustation offerte, coordination avec votre thème.' },
-  { name: 'Kouign-amann', tag: 'Bretagne', desc: 'Beurre salé de Guérande, caramélisé au four.' },
-];
+const COUNT = 6;
 
 export default function Vitrine() {
   const { images } = useSite();
+  const t = useText();
+  const ITEMS = Array.from({ length: COUNT }, (_, i) => ({ name: t(`vitrine_${i + 1}_nom`), tag: t(`vitrine_${i + 1}_tag`), desc: t(`vitrine_${i + 1}_texte`) }));
   const sectionRef = useRef(null);
   const trackRef = useRef(null);
 
@@ -50,16 +45,16 @@ export default function Vitrine() {
       <div className="md:sticky md:top-0 md:h-screen overflow-hidden flex flex-col justify-center py-16 md:py-0">
         <div className="container mx-auto px-6 mb-8 md:mb-10 flex items-end justify-between gap-6">
           <div>
-            <span className="text-bakery-honey font-semibold tracking-[0.2em] uppercase text-xs">La vitrine</span>
-            <h2 className="font-serif text-display-sm mt-3 text-balance">Longez le comptoir</h2>
+            <span className="text-bakery-honey font-semibold tracking-[0.2em] uppercase text-xs">{t('vitrine_kicker')}</span>
+            <h2 className="font-serif text-display-sm mt-3 text-balance">{t('vitrine_titre')}</h2>
           </div>
-          <p className="hidden md:block text-bakery-light/60 text-sm max-w-xs text-right">Faites défiler pour avancer le long de la vitrine — comme en boutique, le nez collé à la vitre.</p>
+          <p className="hidden md:block text-bakery-light/60 text-sm max-w-xs text-right">{t('vitrine_texte')}</p>
         </div>
 
         <div ref={trackRef} className="flex gap-5 md:gap-8 px-6 md:pl-[max(1.5rem,calc((100vw-80rem)/2+1.5rem))] overflow-x-auto md:overflow-visible snap-x snap-mandatory md:snap-none pb-4 md:pb-0 will-change-transform">
           {ITEMS.map((it, i) => (
             <article
-              key={it.name}
+              key={i}
               className="group relative shrink-0 w-[78vw] sm:w-[52vw] md:w-[30rem] aspect-[4/5] md:aspect-[5/6] rounded-4xl overflow-hidden snap-start bg-bakery-ember"
               style={{ transform: `translateY(${i % 2 ? 24 : 0}px)` }}
             >

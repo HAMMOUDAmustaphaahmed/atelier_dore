@@ -26,7 +26,9 @@ export function buildLeaSystem(s) {
 3. Demande le nom, l'email et le téléphone (une question à la fois si le client ne les a pas donnés).
 4. Fais un récapitulatif complet (articles, quantités, retrait, coordonnées${AFFICHER_PRIX ? ', total estimé' : ''}) et demande une confirmation explicite ("Je vous l'enregistre ?").
 5. Seulement après un "oui" clair, appelle create_order. Puis explique : un email vient d'être envoyé, il faut cliquer sur le lien pour valider sous ${CONFIRM_TTL_HOURS} h, un rappel sera envoyé la veille du retrait, le paiement se fait en boutique. Pour un événement : l'équipe recontacte le client sous 24 h avec un devis.
-- Ne dis jamais qu'une commande est enregistrée sans avoir reçu le résultat de create_order. Si l'outil renvoie des erreurs, corrige avec le client et réessaie.
+- Ne dis jamais qu'une commande est enregistrée sans avoir reçu le résultat de create_order. Si l'outil renvoie des erreurs, corrige et rappelle l'outil dans le même tour. Interdit d'écrire « un instant », « je vous envoie la confirmation » ou « je crée la commande » : soit tu appelles l'outil, soit tu annonces son résultat (numéro de commande, email envoyé ou non).
+- Demande toujours explicitement l'HEURE de retrait ; ne la suppose jamais.
+- Gâteau d'événement : dans create_order, mets le libellé souhaité par le client en produit (ex. « gâteau pistache-chocolat pour 20 personnes ») et renseigne le champ evenement (type, invités, budget, thème) — le serveur le rattache au bon produit.
 - Maximum ${env.maxOrdersPerSession} commandes par conversation.
 
 # Périmètre strict
@@ -224,17 +226,31 @@ async function createOrderTool(input, ctx, catalogue) {
   const base = ctx.origin || '';
   const confirmUrl = `${base}/api/orders/confirm?t=${token}&a=confirm`;
   const cancelUrl = `${base}/api/orders/confirm?t=${token}&a=cancel`;
+  let emailOk = true;
+  let final = saved;
   try {
     await sendConfirmationRequest(saved, { confirmUrl, cancelUrl });
   } catch (e) {
+    // Email impossible (ex. domaine non vérifié) : on garde la commande en attente
+    // jusqu'au retrait pour que l'équipe la confirme par téléphone — rien n'est perdu.
     console.error('email confirmation', e);
-    await store().updateOrder(saved.id, { status: ORDER_STATUS.CANCELLED, cancelled_at: new Date().toISOString() });
-    return { result: JSON.stringify({ ok: false, erreurs: ["L'email de confirmation n'a pas pu être envoyé ; la commande n'est pas enregistrée. Propose au client d'appeler la boutique ou d'utiliser le formulaire (handoff_to_human)."] }) };
+    emailOk = false;
+    final = await store().updateOrder(saved.id, {
+      confirm_expires_at: saved.pickup_at,
+      notes: [saved.notes, "[Email de confirmation non envoyé — à confirmer par téléphone]"].filter(Boolean).join(' · '),
+    });
   }
 
-  const pub = publicOrder(saved);
+  const pub = publicOrder(final);
   return {
-    result: JSON.stringify({ ok: true, commande: pub, a_dire_au_client: `Email de validation envoyé à ${saved.client.email} ; lien valable ${CONFIRM_TTL_HOURS} h. Rappel automatique la veille du retrait. Paiement en boutique.` }),
+    result: JSON.stringify({
+      ok: true,
+      commande: pub,
+      email_envoye: emailOk,
+      a_dire_au_client: emailOk
+        ? `Email de validation envoyé à ${saved.client.email} ; lien valable ${CONFIRM_TTL_HOURS} h. Rappel automatique la veille du retrait. Paiement en boutique.`
+        : `Commande enregistrée sous le numéro ${saved.numero}, mais l'email de validation n'a pas pu être envoyé à ${saved.client.email} : l'équipe confirmera par téléphone au ${saved.client.telephone}. Paiement en boutique.`,
+    }),
     ticket: pub,
   };
 }

@@ -10,7 +10,8 @@ import { runTurn } from './llm.js';
 import { buildCatalogue } from './catalogue.js';
 import { formatPickup, publicOrder, ORDER_STATUS } from './orders.js';
 import { sendCancelled, sendCustomEmail } from './emails.js';
-import { getSettings, updateSettings, IMAGE_SLOTS, PALETTE_PRESETS, PALETTE_DEFAULT, CATEGORIES, ICONS_DISPONIBLES, isHex } from './settings.js';
+import { getSettings, updateSettings, IMAGE_SLOTS, PALETTE_PRESETS, PALETTE_DEFAULT, CATEGORIES, ICONS_DISPONIBLES, FONT_PRESETS, isHex } from './settings.js';
+import { CONTENT, CONTENT_PAGES } from '../../src/data/content.js';
 import { parisNow, AFFICHER_PRIX, horairesAffichage } from '../../src/data/infos.js';
 
 const STATUS_LABEL = { en_attente: 'en attente de validation', confirmee: 'confirmée', prete: 'prête', retiree: 'retirée', annulee: 'annulée', expiree: 'expirée' };
@@ -23,7 +24,7 @@ export async function buildChefSystem() {
 Règles :
 - Vérité : n'annonce une action que si l'outil répond ok:true. Sinon dis-le et corrige (bon outil, bons champs).
 - Confirmation « oui » explicite requise avant : annuler une commande, envoyer un email, supprimer un produit. Tout le reste se fait directement, puis résume en une phrase.
-- Quel outil : nom/slogan/coordonnées → set_info · textes des pages → set_texts · horaires/fournées → set_hours · couleurs → set_palette (list_palettes pour les palettes prêtes) · produits → manage_product · photo [PHOTO : url] → set_image (si l'emplacement n'est pas dit : list_image_slots puis propose 2-3 emplacements et attends) · pains épuisés/note → set_board · fermetures → manage_closure · commandes → list_orders / get_order / production_plan / update_order_status · clients → send_email_to_client · formulaire → list_contact_requests.
+- Quel outil : nom/slogan/coordonnées/GPS → set_info · n'importe quel texte du site (titres, paragraphes, boutons, avis, FAQ, frise…) → list_content pour trouver la clé puis set_content · polices → set_fonts · horaires/fournées → set_hours · couleurs → set_palette (list_palettes pour les palettes prêtes) · produits → manage_product · photo [PHOTO : url] → set_image (si l'emplacement n'est pas dit : list_image_slots puis propose 2-3 emplacements et attends) · pains épuisés/note → set_board · fermetures → manage_closure · commandes → list_orders / get_order / production_plan / update_order_status · clients → send_email_to_client · formulaire → list_contact_requests.
 - Ne devine jamais un numéro de commande (list_orders).
 - Français, tutoiement, ton direct, messages courts avec tirets et quelques emojis (🥐📦✅⚠️). Pas de tableaux ni de titres #. Dates depuis le contexte fourni (heure de Paris).
 ${AFFICHER_PRIX ? '' : "- Le site n'affiche pas de prix."}
@@ -33,7 +34,7 @@ Boutique : ${s.boutique.adresse}, ${s.boutique.codePostal} ${s.boutique.ville} �
 
 const PERIODES = ['aujourdhui', 'demain', 'apres_demain', 'semaine', 'semaine_passee', 'mois', 'mois_passe', 'en_attente', 'a_venir', 'passees', 'dates'];
 
-export const CHEF_TOOLS = [{"name":"list_orders","description":"Liste les commandes. periode: aujourdhui|demain|apres_demain|semaine|semaine_passee|mois|mois_passe|en_attente|a_venir|passees|dates (du/au AAAA-MM-JJ). Par défaut confirmées+prêtes ; statut pour filtrer ; tous_statuts pour tout.","input_schema":{"type":"object","properties":{"periode":{"type":"string","enum":PERIODES},"du":{"type":"string"},"au":{"type":"string"},"statut":{"type":"string","enum":Object.keys(STATUS_LABEL)},"tous_statuts":{"type":"boolean"}},"required":["periode"],"additionalProperties":false}},{"name":"get_order","description":"Détail d'une commande (AD-XXXXXX).","input_schema":{"type":"object","properties":{"numero":{"type":"string"}},"required":["numero"],"additionalProperties":false}},{"name":"production_plan","description":"Production agrégée + retraits pour une date (AAAA-MM-JJ).","input_schema":{"type":"object","properties":{"date":{"type":"string"}},"required":["date"],"additionalProperties":false}},{"name":"update_order_status","description":"Statut: prete | retiree | annulee (annulation = email au client, confirmation requise ; motif = phrase pour le client).","input_schema":{"type":"object","properties":{"numero":{"type":"string"},"statut":{"type":"string","enum":["prete","retiree","annulee"]},"motif":{"type":"string"}},"required":["numero","statut"],"additionalProperties":false}},{"name":"send_email_to_client","description":"Email à un client (numero de commande ou email). Après « oui » explicite.","input_schema":{"type":"object","properties":{"numero":{"type":"string"},"email":{"type":"string"},"sujet":{"type":"string"},"message":{"type":"string","description":"texte complet, signé par la boulangerie"}},"required":["sujet","message"],"additionalProperties":false}},{"name":"get_board","description":"Ardoise du jour (pains disponibles/épuisés, note).","input_schema":{"type":"object","properties":{"date":{"type":"string","description":"AAAA-MM-JJ, défaut aujourd'hui"}},"additionalProperties":false}},{"name":"set_board","description":"Met à jour l'ardoise : items [{nom, disponible}] (non cités = disponibles), note.","input_schema":{"type":"object","properties":{"date":{"type":"string"},"items":{"type":"array","items":{"type":"object","properties":{"nom":{"type":"string"},"disponible":{"type":"boolean"}},"required":["nom","disponible"],"additionalProperties":false}},"note":{"type":"string"}},"additionalProperties":false}},{"name":"manage_closure","description":"Fermeture exceptionnelle : ajouter | retirer | lister.","input_schema":{"type":"object","properties":{"action":{"type":"string","enum":["ajouter","retirer","lister"]},"date":{"type":"string","description":"AAAA-MM-JJ"},"motif":{"type":"string"}},"required":["action"],"additionalProperties":false}},{"name":"list_contact_requests","description":"Demandes du formulaire de contact (non traitées par défaut).","input_schema":{"type":"object","properties":{"toutes":{"type":"boolean"}},"additionalProperties":false}},{"name":"mark_contact_handled","description":"Marque une demande de contact traitée.","input_schema":{"type":"object","properties":{"id":{"type":"integer"}},"required":["id"],"additionalProperties":false}},{"name":"stats","description":"Statistiques sur N jours (commandes, produits, activité de Léa).","input_schema":{"type":"object","properties":{"jours":{"type":"integer"}},"additionalProperties":false}},{"name":"customer_insights","description":"Derniers messages clients à Léa (pour synthèse).","input_schema":{"type":"object","properties":{"jours":{"type":"integer"}},"additionalProperties":false}},{"name":"get_settings","description":"Configuration actuelle du site (résumé).","input_schema":{"type":"object","properties":{},"additionalProperties":false}},{"name":"set_info","description":"Nom, slogan, coordonnées, réseaux. Ne passer que les champs à changer.","input_schema":{"type":"object","properties":{"nom":{"type":"string"},"slogan":{"type":"string"},"adresse":{"type":"string"},"codePostal":{"type":"string"},"ville":{"type":"string"},"telephone":{"type":"string"},"email":{"type":"string"},"instagram":{"type":"string"},"facebook":{"type":"string"}},"additionalProperties":false}},{"name":"set_texts","description":"Textes des pages (accueil, pied de page). Ne passer que les champs à changer.","input_schema":{"type":"object","properties":{"hero_kicker":{"type":"string","description":"petite ligne au-dessus du titre"},"hero_titre":{"type":"string"},"hero_titre_accent":{"type":"string","description":"partie dorée du titre"},"hero_sous_titre":{"type":"string"},"intro_titre":{"type":"string"},"intro_texte":{"type":"string"},"footer_accroche":{"type":"string"},"footer_accroche_accent":{"type":"string"},"footer_description":{"type":"string"},"slogan":{"type":"string"},"nom":{"type":"string"}},"additionalProperties":false}},{"name":"set_hours","description":"Horaires : plages [{jours:[lundi…dimanche|tous], ouverture:\"HH:MM\", fermeture:\"HH:MM\"} ou {jours, ferme:true}] ; fournees [7,11,16].","input_schema":{"type":"object","properties":{"plages":{"type":"array","items":{"type":"object","properties":{"jours":{"type":"array","items":{"type":"string"}},"ouverture":{"type":"string"},"fermeture":{"type":"string"},"ferme":{"type":"boolean"}},"required":["jours"],"additionalProperties":false}},"fournees":{"type":"array","items":{"type":"number"}}},"additionalProperties":false}},{"name":"list_palettes","description":"Palettes prêtes et rôle de chaque couleur.","input_schema":{"type":"object","properties":{},"additionalProperties":false}},{"name":"set_palette","description":"Couleurs du site : preset (nom de palette prête) ou couleurs {role:\"#rrggbb\"} (light,cream,sand,gold,honey,brown,crust,dark,ember,orange) ou reinitialiser.","input_schema":{"type":"object","properties":{"preset":{"type":"string"},"couleurs":{"type":"object","additionalProperties":{"type":"string"}},"reinitialiser":{"type":"boolean"}},"additionalProperties":false}},{"name":"manage_product","description":"Produits : lister | ajouter | modifier | supprimer (confirmation) | masquer | afficher. categorie: pains|viennoiseries|patisseries|gateaux|evenements. nom = produit visé ; pour modifier : nouveau_nom, description, icone, image, tags.","input_schema":{"type":"object","properties":{"action":{"type":"string","enum":["lister","ajouter","modifier","supprimer","masquer","afficher"]},"categorie":{"type":"string","enum":CATEGORIES},"nom":{"type":"string"},"nouveau_nom":{"type":"string"},"description":{"type":"string"},"icone":{"type":"string","enum":ICONS_DISPONIBLES},"image":{"type":"string","description":"URL de photo reçue"},"tags":{"type":"array","items":{"type":"string"}}},"required":["action"],"additionalProperties":false}},{"name":"list_image_slots","description":"Emplacements d'images du site et image actuelle.","input_schema":{"type":"object","properties":{},"additionalProperties":false}},{"name":"set_image","description":"Place une image (url reçue via [PHOTO : url]) dans un emplacement (slot), ou reinitialiser.","input_schema":{"type":"object","properties":{"slot":{"type":"string"},"url":{"type":"string"},"reinitialiser":{"type":"boolean"}},"required":["slot"],"additionalProperties":false}}];
+export const CHEF_TOOLS = [{"name":"list_orders","description":"Liste les commandes. periode: aujourdhui|demain|apres_demain|semaine|semaine_passee|mois|mois_passe|en_attente|a_venir|passees|dates (du/au AAAA-MM-JJ). Par défaut confirmées+prêtes ; statut pour filtrer ; tous_statuts pour tout.","input_schema":{"type":"object","properties":{"periode":{"type":"string","enum":PERIODES},"du":{"type":"string"},"au":{"type":"string"},"statut":{"type":"string","enum":Object.keys(STATUS_LABEL)},"tous_statuts":{"type":"boolean"}},"required":["periode"],"additionalProperties":false}},{"name":"get_order","description":"Détail d'une commande (AD-XXXXXX).","input_schema":{"type":"object","properties":{"numero":{"type":"string"}},"required":["numero"],"additionalProperties":false}},{"name":"production_plan","description":"Production agrégée + retraits pour une date (AAAA-MM-JJ).","input_schema":{"type":"object","properties":{"date":{"type":"string"}},"required":["date"],"additionalProperties":false}},{"name":"update_order_status","description":"Statut: confirmee (validation manuelle, ex. par téléphone) | prete | retiree | annulee (annulation = email au client, confirmation requise ; motif = phrase pour le client).","input_schema":{"type":"object","properties":{"numero":{"type":"string"},"statut":{"type":"string","enum":["confirmee","prete","retiree","annulee"]},"motif":{"type":"string"}},"required":["numero","statut"],"additionalProperties":false}},{"name":"send_email_to_client","description":"Email à un client (numero de commande ou email). Après « oui » explicite.","input_schema":{"type":"object","properties":{"numero":{"type":"string"},"email":{"type":"string"},"sujet":{"type":"string"},"message":{"type":"string","description":"texte complet, signé par la boulangerie"}},"required":["sujet","message"],"additionalProperties":false}},{"name":"get_board","description":"Ardoise du jour (pains disponibles/épuisés, note).","input_schema":{"type":"object","properties":{"date":{"type":"string","description":"AAAA-MM-JJ, défaut aujourd'hui"}},"additionalProperties":false}},{"name":"set_board","description":"Met à jour l'ardoise : items [{nom, disponible}] (non cités = disponibles), note.","input_schema":{"type":"object","properties":{"date":{"type":"string"},"items":{"type":"array","items":{"type":"object","properties":{"nom":{"type":"string"},"disponible":{"type":"boolean"}},"required":["nom","disponible"],"additionalProperties":false}},"note":{"type":"string"}},"additionalProperties":false}},{"name":"manage_closure","description":"Fermeture exceptionnelle : ajouter | retirer | lister.","input_schema":{"type":"object","properties":{"action":{"type":"string","enum":["ajouter","retirer","lister"]},"date":{"type":"string","description":"AAAA-MM-JJ"},"motif":{"type":"string"}},"required":["action"],"additionalProperties":false}},{"name":"list_contact_requests","description":"Demandes du formulaire de contact (non traitées par défaut).","input_schema":{"type":"object","properties":{"toutes":{"type":"boolean"}},"additionalProperties":false}},{"name":"mark_contact_handled","description":"Marque une demande de contact traitée.","input_schema":{"type":"object","properties":{"id":{"type":"integer"}},"required":["id"],"additionalProperties":false}},{"name":"stats","description":"Statistiques sur N jours (commandes, produits, activité de Léa).","input_schema":{"type":"object","properties":{"jours":{"type":"integer"}},"additionalProperties":false}},{"name":"customer_insights","description":"Derniers messages clients à Léa (pour synthèse).","input_schema":{"type":"object","properties":{"jours":{"type":"integer"}},"additionalProperties":false}},{"name":"get_settings","description":"Configuration actuelle du site (résumé).","input_schema":{"type":"object","properties":{},"additionalProperties":false}},{"name":"set_info","description":"Nom, slogan, coordonnées, réseaux. Ne passer que les champs à changer.","input_schema":{"type":"object","properties":{"nom":{"type":"string"},"slogan":{"type":"string"},"adresse":{"type":"string"},"codePostal":{"type":"string"},"ville":{"type":"string"},"telephone":{"type":"string"},"email":{"type":"string"},"instagram":{"type":"string"},"facebook":{"type":"string"},"latitude":{"type":"number"},"longitude":{"type":"number"}},"additionalProperties":false}},{"name":"list_content","description":"Textes modifiables du site (clé, page, libellé, valeur actuelle). Filtrer par page (accueil|carte|histoire|contact|global) ou recherche (mot dans le libellé/valeur).","input_schema":{"type":"object","properties":{"page":{"type":"string"},"recherche":{"type":"string"}},"additionalProperties":false}},{"name":"set_content","description":"Modifie des textes du site : valeurs = {cle: nouvelle valeur} (clés de list_content). Valeur vide = retour au texte d'origine.","input_schema":{"type":"object","properties":{"valeurs":{"type":"object","additionalProperties":{"type":"string"}}},"required":["valeurs"],"additionalProperties":false}},{"name":"set_fonts","description":"Police du site : fraunces (défaut) | playfair | cormorant | dm-serif | lora.","input_schema":{"type":"object","properties":{"police":{"type":"string","enum":["fraunces","playfair","cormorant","dm-serif","lora"]}},"required":["police"],"additionalProperties":false}},{"name":"set_hours","description":"Horaires : plages [{jours:[lundi…dimanche|tous], ouverture:\"HH:MM\", fermeture:\"HH:MM\"} ou {jours, ferme:true}] ; fournees [7,11,16].","input_schema":{"type":"object","properties":{"plages":{"type":"array","items":{"type":"object","properties":{"jours":{"type":"array","items":{"type":"string"}},"ouverture":{"type":"string"},"fermeture":{"type":"string"},"ferme":{"type":"boolean"}},"required":["jours"],"additionalProperties":false}},"fournees":{"type":"array","items":{"type":"number"}}},"additionalProperties":false}},{"name":"list_palettes","description":"Palettes prêtes et rôle de chaque couleur.","input_schema":{"type":"object","properties":{},"additionalProperties":false}},{"name":"set_palette","description":"Couleurs du site : preset (nom de palette prête) ou couleurs {role:\"#rrggbb\"} (light,cream,sand,gold,honey,brown,crust,dark,ember,orange) ou reinitialiser.","input_schema":{"type":"object","properties":{"preset":{"type":"string"},"couleurs":{"type":"object","additionalProperties":{"type":"string"}},"reinitialiser":{"type":"boolean"}},"additionalProperties":false}},{"name":"manage_product","description":"Produits : lister | ajouter | modifier | supprimer (confirmation) | masquer | afficher. categorie: pains|viennoiseries|patisseries|gateaux|evenements. nom = produit visé ; pour modifier : nouveau_nom, description, icone, image, tags.","input_schema":{"type":"object","properties":{"action":{"type":"string","enum":["lister","ajouter","modifier","supprimer","masquer","afficher"]},"categorie":{"type":"string","enum":CATEGORIES},"nom":{"type":"string"},"nouveau_nom":{"type":"string"},"description":{"type":"string"},"icone":{"type":"string","enum":ICONS_DISPONIBLES},"image":{"type":"string","description":"URL de photo reçue"},"tags":{"type":"array","items":{"type":"string"}}},"required":["action"],"additionalProperties":false}},{"name":"list_image_slots","description":"Emplacements d'images du site et image actuelle.","input_schema":{"type":"object","properties":{},"additionalProperties":false}},{"name":"set_image","description":"Place une image (url reçue via [PHOTO : url]) dans un emplacement (slot), ou reinitialiser.","input_schema":{"type":"object","properties":{"slot":{"type":"string"},"url":{"type":"string"},"reinitialiser":{"type":"boolean"}},"required":["slot"],"additionalProperties":false}}];
 
 // ---------------------------------------------------------------------------
 // Utilitaires dates (heure de Paris)
@@ -130,6 +131,11 @@ export async function executeChefTool(name, input, ctx = {}) {
         try { await sendCancelled(u, { motif: input.motif }); } catch (e) { return J({ ok: true, statut: 'annulée', avertissement: `Email non envoyé : ${e.message}` }); }
         return J({ ok: true, statut: 'annulée', email_client: 'envoyé' });
       }
+      if (input.statut === 'confirmee') {
+        if (!['en_attente', 'expiree'].includes(o.status)) return J({ ok: false, erreur: `Déjà ${STATUS_LABEL[o.status]}.` });
+        await s.updateOrder(o.id, { status: 'confirmee', confirmed_at: new Date().toISOString() });
+        return J({ ok: true, numero: o.numero, statut: 'confirmée (manuellement)' });
+      }
       if (!['confirmee', 'prete', 'retiree'].includes(o.status)) return J({ ok: false, erreur: `Impossible : la commande est ${STATUS_LABEL[o.status]}.` });
       await s.updateOrder(o.id, input.statut === 'prete' ? { status: 'prete', ready_at: new Date().toISOString() } : { status: 'retiree', picked_up_at: new Date().toISOString() });
       return J({ ok: true, numero: o.numero, statut: STATUS_LABEL[input.statut] });
@@ -205,8 +211,38 @@ export async function executeChefTool(name, input, ctx = {}) {
         horaires: horairesAffichage(settings.horaires), fournees: settings.fournees, palette: settings.palette,
         images: Object.fromEntries(Object.entries(IMAGE_SLOTS).map(([k, v]) => [k, { emplacement: v.label, personnalisee: settings.images[k] !== v.defaut }])),
         produits: Object.fromEntries(CATEGORIES.map((c) => [c, (settings.produits[c] || []).map((p) => `${p.name}${p.disponible === false ? ' (masqué)' : ''}${p.image ? ' 🖼' : ''}`)])),
+        police: settings.police,
+        textes_modifies: Object.keys(settings.textes || {}).length,
         version: settings.version,
       });
+
+    case 'list_content': {
+      const page = input?.page && CONTENT_PAGES.includes(input.page) ? input.page : null;
+      const q = String(input?.recherche || '').toLowerCase().trim();
+      const rows = Object.entries(CONTENT)
+        .filter(([, v]) => !page || v.page === page)
+        .map(([key, v]) => ({ cle: key, page: v.page, libelle: v.label, valeur: settings.textes?.[key] || v.defaut, modifie: !!settings.textes?.[key] }))
+        .filter((r) => !q || r.libelle.toLowerCase().includes(q) || String(r.valeur).toLowerCase().includes(q) || r.cle.includes(q));
+      return J({ nombre: rows.length, textes: rows.slice(0, 60), ...(rows.length > 60 ? { note: 'Affine avec page ou recherche pour voir le reste.' } : {}) });
+    }
+
+    case 'set_content': {
+      const valeurs = input?.valeurs || {};
+      const textes = {}; const inconnues = [];
+      for (const [k, v] of Object.entries(valeurs)) {
+        if (!CONTENT[k]) { inconnues.push(k); continue; }
+        textes[k] = v === null || v === undefined ? '' : String(v).trim().slice(0, 600);
+      }
+      if (!Object.keys(textes).length) return J({ ok: false, erreur: `Aucune clé valide${inconnues.length ? ` (inconnues : ${inconnues.join(', ')})` : ''}. Utilise list_content pour trouver les clés.` });
+      const next = await updateSettings({ textes });
+      return J({ ok: true, modifie: Object.keys(textes).map((k) => ({ cle: k, libelle: CONTENT[k].label, valeur: next.textes[k] || CONTENT[k].defaut })), ...(inconnues.length ? { ignorees: inconnues } : {}) });
+    }
+
+    case 'set_fonts': {
+      if (!FONT_PRESETS.includes(input?.police)) return J({ ok: false, erreur: `Police inconnue. Choix : ${FONT_PRESETS.join(', ')}.` });
+      await updateSettings({ police: input.police });
+      return J({ ok: true, police: input.police });
+    }
 
     case 'set_info': {
       const patch = {};
@@ -214,6 +250,7 @@ export async function executeChefTool(name, input, ctx = {}) {
       if (input.slogan) patch.slogan = String(input.slogan).trim().slice(0, 120);
       const b = {};
       for (const k of ['adresse', 'codePostal', 'ville', 'telephone', 'email', 'instagram', 'facebook']) if (input[k] !== undefined) b[k] = String(input[k]).trim().slice(0, 200);
+      if (Number.isFinite(input.latitude) && Number.isFinite(input.longitude)) b.coords = [Number(input.latitude), Number(input.longitude)];
       if (Object.keys(b).length) patch.boutique = b;
       if (!Object.keys(patch).length) return J({ ok: false, erreur: 'Aucun champ fourni. Champs : nom, slogan, adresse, codePostal, ville, telephone, email, instagram, facebook.' });
       const next = await updateSettings(patch);
@@ -351,10 +388,42 @@ export function chefContext(now = new Date()) {
   return `[Contexte : nous sommes le ${p.label} (Paris), date ISO ${p.isoDate}.]`;
 }
 
+// Sous-ensemble d'outils selon le sujet du message (moins de tokens par requête).
+const TOOL_GROUPS = {
+  commandes: ['list_orders', 'get_order', 'production_plan', 'update_order_status', 'send_email_to_client', 'stats'],
+  ardoise: ['get_board', 'set_board', 'manage_closure', 'manage_product'],
+  site: ['get_settings', 'set_info', 'list_content', 'set_content', 'set_fonts', 'set_hours', 'list_palettes', 'set_palette', 'manage_product', 'list_image_slots', 'set_image'],
+  clients: ['list_contact_requests', 'mark_contact_handled', 'send_email_to_client', 'customer_insights', 'stats', 'get_order', 'list_orders'],
+};
+const TOPIC_WORDS = {
+  commandes: /command|prépar|prepar|retrait|retir|prêt|pret|annul|product|livr|client|numéro|numero|ad-[a-z0-9]{4}|semaine|mois|demain|aujourd|stat|chiffre|combien/i,
+  ardoise: /ardoise|épuis|epuis|plus de |rupture|dispo|ferm|férié|ferie|congé|conge|note|pain|fougasse/i,
+  site: /site|texte|titre|slogan|nom |nom$|adresse|téléphone|telephone|mail|instagram|facebook|horaire|ouvert|fournée|fournee|couleur|palette|police|typo|produit|ajoute|supprime|masque|modifie|change|photo|image|\[photo|accueil|page|bouton|avis|faq|histoire|carte|gps|latitude|coordonn|frise|paragraphe/i,
+  clients: /contact|demande|devis|répond|repond|email|mail|client|léa|lea|synth|résum|resum|stat/i,
+};
+export function selectTools(text, history = '') {
+  const probe = `${text} ${history}`;
+  const names = new Set();
+  for (const [topic, re] of Object.entries(TOPIC_WORDS)) if (re.test(probe)) TOOL_GROUPS[topic].forEach((n) => names.add(n));
+  if (!names.size) return CHEF_TOOLS;
+  return CHEF_TOOLS.filter((t) => names.has(t.name));
+}
+
+// Allège l'historique : résultats d'outils des anciens tours remplacés par un
+// résumé court (ils sont volumineux et inutiles pour la suite).
+function trimHistory(messages, keepTurns = 2) {
+  const userTextIdx = messages.map((m, i) => (m.role === 'user' && !(Array.isArray(m.content) && m.content.some((b) => b.type === 'tool_result')) ? i : -1)).filter((i) => i >= 0);
+  const cutoff = userTextIdx.length > keepTurns ? userTextIdx[userTextIdx.length - keepTurns] : 0;
+  return messages.map((m, i) => {
+    if (i >= cutoff || m.role !== 'user' || !Array.isArray(m.content)) return m;
+    return { ...m, content: m.content.map((b) => (b.type === 'tool_result' ? { ...b, content: '(résultat omis — ancien tour)' } : b)) };
+  });
+}
+
 export async function chefTurn(chatId, text, onText = () => {}) {
   const s = store();
   await s.saveChefMessage(chatId, { role: 'user', kind: 'text', content: text, displayText: text });
-  const rows = await s.loadChefMessages(chatId, 60);
+  const rows = (await s.loadChefMessages(chatId, 40));
 
   const firstUser = rows.findIndex((r) => r.role === 'user' && r.kind === 'text');
   const messages = rows.slice(firstUser).map((r) => ({ role: r.role, content: r.content }));
@@ -368,11 +437,18 @@ export async function chefTurn(chatId, text, onText = () => {}) {
   }
   const last = messages[messages.length - 1];
   last.content = [{ type: 'text', text: last.content }, { type: 'text', text: chefContext() }];
+  const history = trimHistory(messages.slice(0, -1));
+  history.push(last);
+  messages.length = 0; messages.push(...history);
+
+  // Le tour précédent compte pour le choix des outils (« oui » après une proposition).
+  const prevUser = rows.filter((r) => r.role === 'user' && r.kind === 'text').slice(-3, -1).map((r) => r.display_text).join(' ');
+  const tools = selectTools(text, prevUser);
 
   const system = await buildChefSystem();
   let fullText = '';
   for (let round = 0; round <= MAX_ROUNDS; round++) {
-    const message = await runTurn({ system, tools: CHEF_TOOLS, messages, maxTokens: 1500, model: env.chefModel || undefined, onText: (d) => { fullText += d; onText(d); } });
+    const message = await runTurn({ system, tools, messages, maxTokens: 1500, model: env.chefModel || undefined, onText: (d) => { fullText += d; onText(d); } });
     const toolUses = message.content.filter((b) => b.type === 'tool_use');
     const textOnly = message.content.filter((b) => b.type === 'text').map((b) => b.text).join('');
     if (message.stop_reason !== 'tool_use' || !toolUses.length || round === MAX_ROUNDS) {

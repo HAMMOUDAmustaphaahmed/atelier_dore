@@ -119,6 +119,7 @@ export async function POST(request) {
 
         try {
           for (let round = 0; round <= MAX_TOOL_ROUNDS; round++) {
+            if (fullText && !/\s$/.test(fullText)) { fullText += '\n\n'; send({ type: 'text', delta: '\n\n' }); }
             const message = await runTurn({
               system: systemPrompt,
               tools: TOOLS,
