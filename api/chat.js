@@ -17,7 +17,7 @@ import { toApiMessages, toDisplay } from './_lib/history.js';
 import { buildLeaSystem, TOOLS, executeTool, contextBlock } from './_lib/lea.js';
 import { getSettings } from './_lib/settings.js';
 import { parisNow } from '../src/data/infos.js';
-import { runTurn } from './_lib/llm.js';
+import { runTurn, looksLikeFakeAction, NUDGE_TEXT } from './_lib/llm.js';
 import { checkScope, OFFTOPIC_REPLIES, BLOCKED_REPLY, looksOutOfScope, SAFE_REPLACEMENT } from './_lib/guard.js';
 
 export const maxDuration = 60;
@@ -114,12 +114,15 @@ export async function POST(request) {
         const send = (event) => controller.enqueue(encoder.encode(`data: ${JSON.stringify(event)}\n\n`));
         const totalUsage = { input_tokens: 0, cache_read_input_tokens: 0, cache_creation_input_tokens: 0, output_tokens: 0 };
         let fullText = '';
+        let roundText = '';
+        let nudged = false;
         let cta = null;
         let ticket = null;
 
         try {
           for (let round = 0; round <= MAX_TOOL_ROUNDS; round++) {
             if (fullText && !/\s$/.test(fullText)) { fullText += '\n\n'; send({ type: 'text', delta: '\n\n' }); }
+            roundText = '';
             const message = await runTurn({
               system: systemPrompt,
               tools: TOOLS,
@@ -127,6 +130,7 @@ export async function POST(request) {
               maxTokens: env.maxOutputTokens,
               onText: (delta) => {
                 fullText += delta;
+                roundText += delta;
                 send({ type: 'text', delta });
               },
             });
@@ -135,7 +139,20 @@ export async function POST(request) {
             const toolUses = message.content.filter((b) => b.type === 'tool_use');
             const textOnly = message.content.filter((b) => b.type === 'text').map((b) => b.text).join('');
 
+            // « Je lance l'enregistrement… (un instant) » sans appel d'outil → on relance.
+            if (!nudged && round < MAX_TOOL_ROUNDS && looksLikeFakeAction(textOnly, toolUses)) {
+              nudged = true;
+              await store().saveMessage(session.id, { role: 'assistant', kind: 'tool', content: message.content, displayText: null });
+              messages.push({ role: 'assistant', content: message.content });
+              const nudge = [{ type: 'text', text: NUDGE_TEXT }];
+              await store().saveMessage(session.id, { role: 'user', kind: 'tool', content: nudge, displayText: null });
+              messages.push({ role: 'user', content: nudge });
+              continue;
+            }
+
             if (message.stop_reason !== 'tool_use' || toolUses.length === 0 || round === MAX_TOOL_ROUNDS) {
+              // Après une relance, seul le texte final compte (le « un instant » est effacé).
+              if (nudged) { fullText = roundText || textOnly; send({ type: 'replace', text: fullText }); }
               let displayText = fullText || textOnly;
               let content = message.content;
               // Post-contrôle : une réponse qui ressemble à du code ou à une sortie

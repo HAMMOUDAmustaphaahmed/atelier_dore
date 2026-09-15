@@ -188,3 +188,16 @@ async function groqTurn(p) {
     },
   };
 }
+
+// ---------------------------------------------------------------------------
+// Garde-fou anti « un instant » : certains modèles annoncent une action
+// (« je lance l'enregistrement… ») et terminent leur tour sans appeler l'outil.
+// Le serveur relance alors le modèle avec une consigne explicite.
+// ---------------------------------------------------------------------------
+const FAKE_ACTION = /un instant|je lance|je cr[ée]e |je vais cr[ée]er|je vous envoie|j'enregistre|je l'enregistre|j'effectue|je proc[èe]de|en cours d[e']|veuillez patienter|je transf[èe]re|je mets [àa] jour|je modifie|je change|je place|je m'en occupe/i;
+
+export function looksLikeFakeAction(text, toolUses) {
+  return !toolUses?.length && FAKE_ACTION.test(String(text || ''));
+}
+
+export const NUDGE_TEXT = "[Système : tu as annoncé une action mais aucun outil n'a été appelé — rien n'a été fait. Appelle MAINTENANT l'outil approprié avec les informations déjà collectées (par exemple create_order avec tous les champs). Ne réponds avec du texte qu'après avoir reçu le résultat de l'outil.]";

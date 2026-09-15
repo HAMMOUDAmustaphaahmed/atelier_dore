@@ -6,7 +6,7 @@
 
 import { store } from './store.js';
 import { env } from './env.js';
-import { runTurn } from './llm.js';
+import { runTurn, looksLikeFakeAction, NUDGE_TEXT } from './llm.js';
 import { buildCatalogue } from './catalogue.js';
 import { formatPickup, publicOrder, ORDER_STATUS } from './orders.js';
 import { sendCancelled, sendCustomEmail } from './emails.js';
@@ -459,10 +459,22 @@ export async function chefTurn(chatId, text, onText = () => {}) {
 
   const system = await buildChefSystem();
   let fullText = '';
+  let nudged = false;
   for (let round = 0; round <= MAX_ROUNDS; round++) {
-    const message = await runTurn({ system, tools, messages, maxTokens: 1500, model: env.chefModel || undefined, onText: (d) => { fullText += d; onText(d); } });
+    let roundText = '';
+    const message = await runTurn({ system, tools, messages, maxTokens: 1500, model: env.chefModel || undefined, onText: (d) => { fullText += d; roundText += d; onText(d); } });
     const toolUses = message.content.filter((b) => b.type === 'tool_use');
     const textOnly = message.content.filter((b) => b.type === 'text').map((b) => b.text).join('');
+    if (!nudged && round < MAX_ROUNDS && looksLikeFakeAction(textOnly, toolUses)) {
+      nudged = true;
+      await s.saveChefMessage(chatId, { role: 'assistant', kind: 'tool', content: message.content, displayText: null });
+      messages.push({ role: 'assistant', content: message.content });
+      const nudge = [{ type: 'text', text: NUDGE_TEXT }];
+      await s.saveChefMessage(chatId, { role: 'user', kind: 'tool', content: nudge, displayText: null });
+      messages.push({ role: 'user', content: nudge });
+      fullText = '';
+      continue;
+    }
     if (message.stop_reason !== 'tool_use' || !toolUses.length || round === MAX_ROUNDS) {
       const display = tidy(fullText || textOnly) || '(pas de réponse)';
       await s.saveChefMessage(chatId, { role: 'assistant', kind: 'text', content: message.content.length ? message.content : [{ type: 'text', text: display }], displayText: display });
