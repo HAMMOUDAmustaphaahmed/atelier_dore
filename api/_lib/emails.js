@@ -41,7 +41,7 @@ function gmail() {
  */
 export async function sendMail({ to, subject, html, replyTo, scheduledAt }) {
   await refreshBoutique();
-  const from = env.emailFrom.replace("L'Atelier Doré", B().nom);
+  const from = env.emailProvider === 'gmail' ? `${B().nom} <${env.gmailUser}>` : env.emailFrom.replace("L'Atelier Doré", B().nom);
   if (env.emailProvider === 'gmail') {
     const info = await gmail().sendMail({ from, to: Array.isArray(to) ? to.join(', ') : to, subject, html, ...(replyTo ? { replyTo } : {}) });
     return info?.messageId || null;
