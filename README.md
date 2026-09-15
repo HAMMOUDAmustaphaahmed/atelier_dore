@@ -57,7 +57,11 @@ La clé Anthropic et les clés Supabase/Resend ne quittent jamais le serveur : l
 1. **Supabase** (gratuit) : créer un projet → *SQL Editor* → coller `supabase/schema.sql` → *Run*. Récupérer `Project URL` et la clé **service_role** (*Settings → API*). *(Fait pour le projet actuel : schéma appliqué, clés dans `.env.local`.)*
    Node 22 est requis par `@supabase/supabase-js` (Vercel l'utilise via `engines` ; en local avec Node 20 le client fonctionne quand même grâce au transport temps réel factice dans `store.js`).
 2. **Anthropic** : créer une clé sur console.anthropic.com.
-3. **Resend** (gratuit) : créer une clé API. Sans domaine vérifié, l'expéditeur `onboarding@resend.dev` ne peut envoyer **qu'à l'adresse de votre compte Resend** — mettez cette adresse dans `BAKERY_EMAIL` pour tester, puis vérifiez votre domaine pour envoyer partout.
+3. **Emails** — trois fournisseurs au choix, détectés automatiquement (`api/_lib/emails.js`) :
+   - **Mailjet** (utilisé en production, gratuit 200/jour, sans domaine) : `MAILJET_API_KEY` + `MAILJET_SECRET_KEY` + `MAILJET_SENDER` (adresse expéditrice validée chez Mailjet).
+   - **Gmail** (gratuit, mot de passe d'application) : `GMAIL_USER` + `GMAIL_APP_PASSWORD`.
+   - **Resend** (nécessite un domaine vérifié pour envoyer à tout le monde) : `RESEND_API_KEY` + `EMAIL_FROM`. Seul Resend sait programmer un envoi différé ; avec Mailjet/Gmail, le rappel « veille du retrait » est envoyé par le cron du matin quand le retrait est dans les 36 h.
+   Forcer un fournisseur : `EMAIL_PROVIDER=mailjet|gmail|resend`.
 4. Copier `.env.example` en `.env.local` et remplir les valeurs (`SESSION_SECRET` : `openssl rand -hex 32`).
 5. `npm run dev` → le site **et** `/api/*` tournent sur http://localhost:5173.
    Pour tester **sans aucune clé** : `SESSION_SECRET=x npm run dev` suffit pour le site ; Léa nécessite `ANTHROPIC_API_KEY`, les emails `RESEND_API_KEY`.
