@@ -73,7 +73,7 @@ Les boutons et commandes répondent instantanément. Pour tout le reste, parlez-
 • Couleurs : « palette terracotta », « des couleurs plus chaudes »
 • Police : « mets la police Playfair »
 • Produits : « ajoute une pâtisserie : Flan vanille, … », « masque le kouign-amann »
-• Photos : envoyez une photo 📷 avec ou sans légende, je la place où vous voulez
+• Photos : envoyez simplement une photo 📷 dans la conversation (avec une légende comme « pour le pain au levain », ou sans — je vous propose où la mettre). Un lien vers une page web fonctionne aussi : je récupère sa photo principale.
 
 ✉️ Clients
 • « Réponds à la demande de M. Dupont : … » (je rédige, vous validez)

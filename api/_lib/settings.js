@@ -118,3 +118,50 @@ export async function uploadImage(buffer, { name = 'image', contentType = 'image
 
 export function isHex(s) { return /^#[0-9a-f]{6}$/i.test(String(s || '')); }
 export { env };
+
+// ---------------------------------------------------------------------------
+// Résolution d'une URL fournie par le propriétaire → image hébergée chez nous.
+// Accepte un fichier image OU une page web (on prend son image principale og:image).
+// ---------------------------------------------------------------------------
+const MAX_IMAGE_BYTES = 8 * 1024 * 1024;
+
+async function fetchWithTimeout(url, ms = 12000) {
+  const ctrl = new AbortController();
+  const t = setTimeout(() => ctrl.abort(), ms);
+  try {
+    return await fetch(url, { signal: ctrl.signal, redirect: 'follow', headers: { 'user-agent': 'Mozilla/5.0 (compatible; AtelierDoreBot/1.0)', accept: 'image/*,text/html;q=0.9,*/*;q=0.8' } });
+  } finally { clearTimeout(t); }
+}
+
+export async function resolveImageUrl(input, depth = 0) {
+  const url = String(input || '').trim();
+  if (!/^https?:\/\//i.test(url)) throw new Error('URL invalide (elle doit commencer par http:// ou https://).');
+  const r = await fetchWithTimeout(url);
+  if (!r.ok) throw new Error(`Impossible de télécharger cette adresse (HTTP ${r.status}).`);
+  const type = (r.headers.get('content-type') || '').split(';')[0].trim().toLowerCase();
+
+  if (type.startsWith('image/')) {
+    const buffer = Buffer.from(await r.arrayBuffer());
+    if (buffer.length > MAX_IMAGE_BYTES) throw new Error('Image trop lourde (max 8 Mo).');
+    if (buffer.length < 15 * 1024) throw new Error('Image trop petite pour le site (icône ou logo ?).');
+    const name = decodeURIComponent(url.split('/').pop()?.split('?')[0] || 'image').replace(/\.[a-z0-9]+$/i, '');
+    return { url: await uploadImage(buffer, { name, contentType: type === 'image/jpg' ? 'image/jpeg' : type }), source: 'fichier' };
+  }
+
+  if (type.includes('text/html') && depth < 1) {
+    const html = (await r.text()).slice(0, 400_000);
+    const meta = (prop) => {
+      const m = html.match(new RegExp(`<meta[^>]+(?:property|name)=["']${prop}["'][^>]*content=["']([^"']+)["']`, 'i'))
+        || html.match(new RegExp(`<meta[^>]+content=["']([^"']+)["'][^>]*(?:property|name)=["']${prop}["']`, 'i'));
+      return m?.[1];
+    };
+    const candidate = meta('og:image') || meta('og:image:secure_url') || meta('twitter:image');
+    if (candidate) {
+      const abs = new URL(candidate.replace(/&amp;/g, '&'), url).href;
+      const res = await resolveImageUrl(abs, depth + 1);
+      return { ...res, source: 'page' };
+    }
+    throw new Error("Cette adresse est une page web sans image principale détectable.");
+  }
+  throw new Error(`Cette adresse ne pointe pas vers une image (type reçu : ${type || 'inconnu'}).`);
+}

@@ -121,6 +121,15 @@ export function useSite() {
   return useContext(SiteContext);
 }
 
+/** Props <img> pour un emplacement : src configuré + repli sur l'image d'origine si elle ne charge pas. */
+export function useImage() {
+  const { images } = useContext(SiteContext);
+  return (slot) => ({
+    src: images[slot] || IMAGES_DEFAULT[slot],
+    onError: (e) => { const d = IMAGES_DEFAULT[slot]; if (d && e.currentTarget.src !== d) e.currentTarget.src = d; },
+  });
+}
+
 /** t('cle') → texte du registre (surcharge du propriétaire ou défaut). */
 export function useText() {
   const { textes } = useContext(SiteContext);

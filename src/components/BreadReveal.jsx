@@ -18,6 +18,7 @@ function makeCrumbs(n = 60) {
 }
 
 export default function BreadReveal({ image, kicker, title, subtitle, children, aside, scrollLabel = 'Défiler pour entrer' }) {
+  const imgProps = typeof image === 'string' ? { src: image } : image;
   const sectionRef = useRef(null);
   const leftRef = useRef(null);
   const rightRef = useRef(null);
@@ -54,11 +55,11 @@ export default function BreadReveal({ image, kicker, title, subtitle, children, 
 
         {/* Deux moitiés de croûte qui s'écartent */}
         <div ref={leftRef} className="absolute inset-0 will-change-transform" style={{ clipPath: LEFT_CLIP }}>
-          <img src={image} alt="" fetchPriority="high" className="w-full h-full object-cover" />
+          <img {...imgProps} alt="" fetchPriority="high" className="w-full h-full object-cover" />
           <div className="absolute inset-0 bg-bakery-dark/45" />
         </div>
         <div ref={rightRef} className="absolute inset-0 will-change-transform" style={{ clipPath: RIGHT_CLIP }}>
-          <img src={image} alt="" className="w-full h-full object-cover" />
+          <img {...imgProps} alt="" className="w-full h-full object-cover" />
           <div className="absolute inset-0 bg-bakery-dark/45" />
         </div>
 

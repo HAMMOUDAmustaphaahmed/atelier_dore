@@ -10,7 +10,7 @@ import { runTurn } from './llm.js';
 import { buildCatalogue } from './catalogue.js';
 import { formatPickup, publicOrder, ORDER_STATUS } from './orders.js';
 import { sendCancelled, sendCustomEmail } from './emails.js';
-import { getSettings, updateSettings, IMAGE_SLOTS, PALETTE_PRESETS, PALETTE_DEFAULT, CATEGORIES, ICONS_DISPONIBLES, FONT_PRESETS, isHex } from './settings.js';
+import { getSettings, updateSettings, IMAGE_SLOTS, PALETTE_PRESETS, PALETTE_DEFAULT, CATEGORIES, ICONS_DISPONIBLES, FONT_PRESETS, isHex, resolveImageUrl } from './settings.js';
 import { CONTENT, CONTENT_PAGES } from '../../src/data/content.js';
 import { parisNow, AFFICHER_PRIX, horairesAffichage } from '../../src/data/infos.js';
 
@@ -24,7 +24,7 @@ export async function buildChefSystem() {
 Règles :
 - Vérité : n'annonce une action que si l'outil répond ok:true. Sinon dis-le et corrige (bon outil, bons champs).
 - Confirmation « oui » explicite requise avant : annuler une commande, envoyer un email, supprimer un produit. Tout le reste se fait directement, puis résume en une phrase.
-- Quel outil : nom/slogan/coordonnées/GPS → set_info · n'importe quel texte du site (titres, paragraphes, boutons, avis, FAQ, frise…) → list_content pour trouver la clé puis set_content · polices → set_fonts · horaires/fournées → set_hours · couleurs → set_palette (list_palettes pour les palettes prêtes) · produits → manage_product · photo [PHOTO : url] → set_image (si l'emplacement n'est pas dit : list_image_slots puis propose 2-3 emplacements et attends) · pains épuisés/note → set_board · fermetures → manage_closure · commandes → list_orders / get_order / production_plan / update_order_status · clients → send_email_to_client · formulaire → list_contact_requests.
+- Quel outil : nom/slogan/coordonnées/GPS → set_info · n'importe quel texte du site (titres, paragraphes, boutons, avis, FAQ, frise…) → list_content pour trouver la clé puis set_content · polices → set_fonts · horaires/fournées → set_hours · couleurs → set_palette (list_palettes pour les palettes prêtes) · produits → manage_product · photo [PHOTO : url] → set_image (si l'emplacement n'est pas dit : list_image_slots puis propose 2-3 emplacements et attends). Si le propriétaire veut changer une image sans l'avoir envoyée, demande-lui d'envoyer la photo directement dans la conversation (jamais « donne-moi une URL ») ; une URL reste acceptée si c'est lui qui la propose · pains épuisés/note → set_board · fermetures → manage_closure · commandes → list_orders / get_order / production_plan / update_order_status · clients → send_email_to_client · formulaire → list_contact_requests.
 - Ne devine jamais un numéro de commande (list_orders).
 - Français, tutoiement, ton direct, messages courts avec tirets et quelques emojis (🥐📦✅⚠️). Pas de tableaux ni de titres #. Dates depuis le contexte fourni (heure de Paris).
 ${AFFICHER_PRIX ? '' : "- Le site n'affiche pas de prix."}
@@ -334,7 +334,9 @@ export async function executeChefTool(name, input, ctx = {}) {
       if (input.action === 'ajouter') {
         if (!input.nom || !input.description) return J({ ok: false, erreur: 'nom et description requis.' });
         if (idx >= 0) return J({ ok: false, erreur: 'Ce produit existe déjà dans cette catégorie (utilise modifier).' });
-        list.push({ name: String(input.nom).trim().slice(0, 60), desc: String(input.description).trim().slice(0, 200), icon: input.icone || (cat === 'pains' ? 'campagne' : cat === 'viennoiseries' ? 'croissant' : cat === 'evenements' ? 'anniversaire' : 'cakeslice'), ...(input.image ? { image: input.image } : {}), ...(input.tags ? { tags: input.tags } : {}), disponible: true });
+        let image;
+        if (input.image) { try { image = (await resolveImageUrl(input.image)).url; } catch (e) { return J({ ok: false, erreur: `Image : ${e.message}` }); } }
+        list.push({ name: String(input.nom).trim().slice(0, 60), desc: String(input.description).trim().slice(0, 200), icon: input.icone || (cat === 'pains' ? 'campagne' : cat === 'viennoiseries' ? 'croissant' : cat === 'evenements' ? 'anniversaire' : 'cakeslice'), ...(image ? { image } : {}), ...(input.tags ? { tags: input.tags } : {}), disponible: true });
       } else {
         if (idx < 0) return J({ ok: false, erreur: `Produit « ${input.nom} » introuvable dans ${cat}. Produits : ${list.map((p) => p.name).join(', ')}.` });
         if (input.action === 'supprimer') list.splice(idx, 1);
@@ -344,7 +346,10 @@ export async function executeChefTool(name, input, ctx = {}) {
           if (input.nouveau_nom) list[idx].name = String(input.nouveau_nom).trim().slice(0, 60);
           if (input.description) list[idx].desc = String(input.description).trim().slice(0, 200);
           if (input.icone) list[idx].icon = input.icone;
-          if (input.image) list[idx].image = input.image;
+          if (input.image) {
+            try { list[idx].image = (await resolveImageUrl(input.image)).url; }
+            catch (e) { return J({ ok: false, erreur: `Image : ${e.message}` }); }
+          }
           if (input.tags) list[idx].tags = input.tags;
         }
       }
@@ -358,10 +363,17 @@ export async function executeChefTool(name, input, ctx = {}) {
     case 'set_image': {
       const slot = String(input.slot || '').trim();
       if (!IMAGE_SLOTS[slot]) return J({ ok: false, erreur: `Emplacement inconnu. Disponibles : ${Object.keys(IMAGE_SLOTS).join(', ')}.` });
-      const url = input.reinitialiser ? IMAGE_SLOTS[slot].defaut : String(input.url || '').trim();
-      if (!/^https?:\/\//.test(url)) return J({ ok: false, erreur: 'URL invalide (attendue depuis une photo envoyée : [PHOTO : url]).' });
+      let url = input.reinitialiser ? IMAGE_SLOTS[slot].defaut : String(input.url || '').trim();
+      if (!/^https?:\/\//.test(url)) return J({ ok: false, erreur: "URL invalide. Demande au propriétaire d'envoyer la photo directement dans Telegram." });
+      let source = 'photo';
+      if (!input.reinitialiser && !url.includes('/storage/v1/object/public/site/')) {
+        // URL externe : on vérifie que c'est une image (ou on prend l'image principale
+        // d'une page web) et on la ré-héberge chez nous.
+        try { ({ url, source } = await resolveImageUrl(url)); }
+        catch (e) { return J({ ok: false, erreur: `${e.message} Propose au propriétaire d'envoyer la photo directement dans Telegram (elle sera placée automatiquement).` }); }
+      }
       await updateSettings({ images: { [slot]: url } });
-      return J({ ok: true, slot, emplacement: IMAGE_SLOTS[slot].label, url });
+      return J({ ok: true, slot, emplacement: IMAGE_SLOTS[slot].label, url, ...(source === 'page' ? { note: "L'adresse était une page web : j'ai pris sa photo principale." } : {}) });
     }
 
     default:

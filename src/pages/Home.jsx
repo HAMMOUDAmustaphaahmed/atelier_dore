@@ -13,7 +13,7 @@ import Comptoir from '../components/home/Comptoir';
 import { GateauAnniversaire, GateauMariage, GateauFiancailles } from '../components/icons/ProductIcons';
 import { useBoutique } from '../hooks/useBoutique';
 import { openLea } from '../lib/lea';
-import { useSite, useText } from '../site/SiteProvider';
+import { useSite, useText, useImage } from '../site/SiteProvider';
 
 function NextBatchWidget() {
   const { nextBatch, open, closesAt, opensAt } = useBoutique();
@@ -32,8 +32,9 @@ function NextBatchWidget() {
 }
 
 export default function Home() {
-  const { images: img, nom } = useSite();
+  const { nom } = useSite();
   const t = useText();
+  const img = useImage();
   const avis = [1, 2, 3].map((i) => ({ name: t(`avis_${i}_nom`), text: t(`avis_${i}_texte`) })).filter((a) => a.text);
   return (
     <>
@@ -45,7 +46,7 @@ export default function Home() {
 
       {/* Hero — la croûte se fend et révèle la mie au fil du scroll */}
       <BreadReveal
-        image={img.hero}
+        image={img('hero')}
         kicker={t('hero_kicker')}
         title={<>{t('hero_titre')} <em className="text-bakery-honey not-italic font-light italic">{t('hero_titre_accent')}</em></>}
         subtitle={t('hero_sous_titre')}
@@ -80,7 +81,7 @@ export default function Home() {
             <Reveal delay={0.1} className="lg:col-span-5 w-full">
               <div className="relative">
                 <ParallaxImage
-                  src={img.intro}
+                  {...img('intro')}
                   alt="Artisan boulanger façonnant la pâte"
                   className="rounded-4xl shadow-warm aspect-[4/5]"
                   strength={50}
@@ -115,17 +116,17 @@ export default function Home() {
           <div className="grid grid-cols-1 md:grid-cols-6 md:grid-rows-2 gap-5 md:h-[42rem]">
             <BentoCard
               className="md:col-span-3 md:row-span-2"
-              img={img.signature_1}
+              img={img('signature_1')}
               title={t('signature_1_titre')} desc={t('signature_1_texte')} tag={t('signature_1_tag')}
             />
             <BentoCard
               className="md:col-span-3"
-              img={img.signature_2}
+              img={img('signature_2')}
               title={t('signature_2_titre')} desc={t('signature_2_texte')} tag={t('signature_2_tag')}
             />
             <BentoCard
               className="md:col-span-2"
-              img={img.signature_3}
+              img={img('signature_3')}
               title={t('signature_3_titre')} desc={t('signature_3_texte')} tag={t('signature_3_tag')}
             />
             <Reveal className="md:col-span-1 rounded-4xl bg-bakery-dark text-bakery-light p-6 flex flex-col justify-between min-h-[12rem]">
@@ -206,7 +207,7 @@ export default function Home() {
 function BentoCard({ className = '', img, title, desc, tag }) {
   return (
     <Reveal className={`group relative rounded-4xl overflow-hidden min-h-[16rem] ${className}`}>
-      <img src={img} alt={title} loading="lazy" className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
+      <img {...img} alt={title} loading="lazy" className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
       <div className="absolute inset-0 bg-gradient-to-t from-bakery-dark/85 via-bakery-dark/20 to-transparent" />
       {tag && <span className="absolute top-5 left-5 text-[0.65rem] uppercase tracking-[0.2em] font-semibold bg-bakery-cream text-bakery-dark px-3 py-1.5 rounded-full">{tag}</span>}
       <div className="absolute inset-x-0 bottom-0 p-6 text-bakery-light">

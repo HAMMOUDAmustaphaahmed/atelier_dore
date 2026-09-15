@@ -3,7 +3,7 @@ import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { ArrowUpRight } from 'lucide-react';
 import { openLea } from '../../lib/lea';
-import { useSite, useText } from '../../site/SiteProvider';
+import { useText, useImage } from '../../site/SiteProvider';
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -13,7 +13,7 @@ gsap.registerPlugin(ScrollTrigger);
 const COUNT = 6;
 
 export default function Vitrine() {
-  const { images } = useSite();
+  const img = useImage();
   const t = useText();
   const ITEMS = Array.from({ length: COUNT }, (_, i) => ({ name: t(`vitrine_${i + 1}_nom`), tag: t(`vitrine_${i + 1}_tag`), desc: t(`vitrine_${i + 1}_texte`) }));
   const sectionRef = useRef(null);
@@ -58,7 +58,7 @@ export default function Vitrine() {
               className="group relative shrink-0 w-[78vw] sm:w-[52vw] md:w-[30rem] aspect-[4/5] md:aspect-[5/6] rounded-4xl overflow-hidden snap-start bg-bakery-ember"
               style={{ transform: `translateY(${i % 2 ? 24 : 0}px)` }}
             >
-              <img src={images[`vitrine_${i + 1}`]} alt={it.name} loading="lazy" width="900" height="1080" className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
+              <img {...img(`vitrine_${i + 1}`)} alt={it.name} loading="lazy" width="900" height="1080" className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
               <div className="absolute inset-0 bg-gradient-to-t from-bakery-dark via-bakery-dark/30 to-transparent" />
               <span className="absolute top-5 left-5 text-[0.65rem] uppercase tracking-[0.2em] font-semibold bg-bakery-honey text-bakery-dark px-3 py-1.5 rounded-full">{it.tag}</span>
               <div className="absolute inset-x-0 bottom-0 p-6 md:p-8">

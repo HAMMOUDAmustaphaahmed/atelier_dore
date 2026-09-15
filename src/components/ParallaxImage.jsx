@@ -4,7 +4,7 @@ import { ScrollTrigger } from 'gsap/ScrollTrigger';
 
 gsap.registerPlugin(ScrollTrigger);
 
-export default function ParallaxImage({ src, alt, className = '', strength = 60 }) {
+export default function ParallaxImage({ src, alt, className = '', strength = 60, onError }) {
   const wrapRef = useRef(null);
   const imgRef = useRef(null);
 
@@ -33,6 +33,7 @@ export default function ParallaxImage({ src, alt, className = '', strength = 60 
       <img
         ref={imgRef}
         src={src}
+        onError={onError}
         alt={alt}
         className="w-full h-[120%] object-cover will-change-transform"
       />

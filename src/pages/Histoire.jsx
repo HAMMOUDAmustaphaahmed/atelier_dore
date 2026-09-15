@@ -6,7 +6,7 @@ import ParallaxImage from '../components/ParallaxImage';
 import Reveal from '../components/Reveal';
 import Marquee from '../components/home/Marquee';
 import { openLea } from '../lib/lea';
-import { useSite, useText } from '../site/SiteProvider';
+import { useSite, useText, useImage } from '../site/SiteProvider';
 
 function Counter({ value, suffix = '', label }) {
   const ref = useRef(null);
@@ -26,8 +26,9 @@ function Counter({ value, suffix = '', label }) {
 
 
 export default function Histoire() {
-  const { images: img, nom } = useSite();
+  const { nom } = useSite();
   const t = useText();
+  const img = useImage();
   const MILESTONES = [1, 2, 3, 4, 5].map((i) => ({ year: t(`histoire_date_${i}`), title: t(`histoire_date_${i}_titre`), text: t(`histoire_date_${i}_texte`) })).filter((m) => m.title);
   const CHIFFRES = [1, 2, 3, 4].map((i) => ({ value: Number(t(`histoire_chiffre_${i}`)) || 0, suffix: t(`histoire_chiffre_${i}_suffixe`), label: t(`histoire_chiffre_${i}_texte`) }));
   const ENGAGEMENTS = [[Wheat, 1], [Leaf, 2], [HeartHandshake, 3]].map(([icon, i]) => ({ icon, t: t(`histoire_engagement_${i}_titre`), d: t(`histoire_engagement_${i}_texte`) }));
@@ -42,7 +43,7 @@ export default function Histoire() {
       {/* Hero */}
       <section className="relative h-[70svh] min-h-[420px] flex items-end overflow-hidden">
         <ParallaxImage
-          src={img.histoire_hero}
+          {...img('histoire_hero')}
           alt="Atelier de boulangerie"
           className="absolute inset-0 w-full h-full"
           strength={70}
@@ -75,7 +76,7 @@ export default function Histoire() {
             <p className="text-bakery-brown/80 leading-relaxed text-pretty">{t('histoire_racines_texte_2')}</p>
           </Reveal>
           <Reveal x={40} delay={0.1}>
-            <ParallaxImage src={img.histoire_petrissage} alt="Pétrissage" className="rounded-4xl shadow-warm aspect-[4/3]" strength={40} />
+            <ParallaxImage {...img('histoire_petrissage')} alt="Pétrissage" className="rounded-4xl shadow-warm aspect-[4/3]" strength={40} />
           </Reveal>
         </div>
 
@@ -93,7 +94,7 @@ export default function Histoire() {
             </ul>
           </Reveal>
           <Reveal x={-40} className="md:order-1">
-            <ParallaxImage src={img.histoire_ingredients} alt="Ingrédients" className="rounded-4xl shadow-warm aspect-[4/3]" strength={40} />
+            <ParallaxImage {...img('histoire_ingredients')} alt="Ingrédients" className="rounded-4xl shadow-warm aspect-[4/3]" strength={40} />
           </Reveal>
         </div>
       </section>
