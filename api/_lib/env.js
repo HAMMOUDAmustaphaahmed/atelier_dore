@@ -21,7 +21,10 @@ export const env = {
 
   // Emails : 'gmail' (gratuit, mot de passe d'application) ou 'resend' (domaine vérifié).
   // Auto : gmail si GMAIL_USER est défini, sinon resend.
-  emailProvider: (process.env.EMAIL_PROVIDER || (process.env.GMAIL_USER ? 'gmail' : 'resend')).toLowerCase(),
+  emailProvider: (process.env.EMAIL_PROVIDER || (process.env.MAILJET_API_KEY ? 'mailjet' : process.env.GMAIL_USER ? 'gmail' : 'resend')).toLowerCase(),
+  mailjetKey: process.env.MAILJET_API_KEY,
+  mailjetSecret: process.env.MAILJET_SECRET_KEY,
+  mailjetSender: process.env.MAILJET_SENDER,   // adresse expéditrice validée chez Mailjet
   gmailUser: process.env.GMAIL_USER,
   gmailAppPassword: (process.env.GMAIL_APP_PASSWORD || '').replace(/\s+/g, ''),
   resendKey: process.env.RESEND_API_KEY,

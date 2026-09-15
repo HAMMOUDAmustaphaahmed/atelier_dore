@@ -28,6 +28,11 @@ function client() {
   if (!resend) resend = new Resend(env.resendKey);
   return resend;
 }
+function mailjet() {
+  assertEnv(['mailjetKey', 'mailjetSecret', 'mailjetSender']);
+  if (!smtp) smtp = nodemailer.createTransport({ host: 'in-v3.mailjet.com', port: 587, secure: false, auth: { user: env.mailjetKey, pass: env.mailjetSecret } });
+  return smtp;
+}
 function gmail() {
   assertEnv(['gmailUser', 'gmailAppPassword']);
   if (!smtp) smtp = nodemailer.createTransport({ service: 'gmail', auth: { user: env.gmailUser, pass: env.gmailAppPassword } });
@@ -41,9 +46,10 @@ function gmail() {
  */
 export async function sendMail({ to, subject, html, replyTo, scheduledAt }) {
   await refreshBoutique();
-  const from = env.emailProvider === 'gmail' ? `${B().nom} <${env.gmailUser}>` : env.emailFrom.replace("L'Atelier Doré", B().nom);
-  if (env.emailProvider === 'gmail') {
-    const info = await gmail().sendMail({ from, to: Array.isArray(to) ? to.join(', ') : to, subject, html, ...(replyTo ? { replyTo } : {}) });
+  const from = env.emailProvider === 'gmail' ? `${B().nom} <${env.gmailUser}>` : env.emailProvider === 'mailjet' ? `${B().nom} <${env.mailjetSender}>` : env.emailFrom.replace("L'Atelier Doré", B().nom);
+  if (env.emailProvider === 'gmail' || env.emailProvider === 'mailjet') {
+    const transport = env.emailProvider === 'gmail' ? gmail() : mailjet();
+    const info = await transport.sendMail({ from, to: Array.isArray(to) ? to.join(', ') : to, subject, html, ...(replyTo ? { replyTo } : {}) });
     return info?.messageId || null;
   }
   const { data, error } = await client().emails.send({ from, to: Array.isArray(to) ? to : [to], subject, html, ...(replyTo ? { replyTo } : {}), ...(scheduledAt ? { scheduledAt } : {}) });
@@ -51,7 +57,7 @@ export async function sendMail({ to, subject, html, replyTo, scheduledAt }) {
   return data?.id || null;
 }
 
-export const canSchedule = () => env.emailProvider !== 'gmail';
+export const canSchedule = () => env.emailProvider === 'resend';
 
 const layout = (title, body) => `
   <div style="font-family:Inter,Arial,sans-serif;color:#2c1e16;max-width:600px;margin:0 auto;padding:24px">

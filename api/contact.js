@@ -19,7 +19,7 @@ const isEmail = (s) => /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(s);
 
 export async function POST(request) {
   try {
-    assertEnv([env.emailProvider === 'gmail' ? 'gmailUser' : 'resendKey', 'bakeryEmail']);
+    assertEnv([env.emailProvider === 'gmail' ? 'gmailUser' : env.emailProvider === 'mailjet' ? 'mailjetKey' : 'resendKey', 'bakeryEmail']);
 
     const body = await readJson(request);
     if (!body) return error(400, 'Requête invalide.');
